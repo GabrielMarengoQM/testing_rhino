@@ -25,5 +25,8 @@ server <- function(id) {
         echarts4r$e_x_axis(Year) |>
         echarts4r$e_tooltip()
     )
+    
+  "hello"  
   })
 }
+
