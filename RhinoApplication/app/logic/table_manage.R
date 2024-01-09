@@ -13,8 +13,8 @@ getHiddenColumns <- function(selected_sources) {
     'Gene IDs' = 1:9,
     'Mouse data' = 10:16,
     'Disease data' = 17:28,
-    'Cell line data - gene constraint metrics' = 29:35,
-    'Sequencing data - gene constraint metrics' = 36:53,
+    'Cell line data' = 29:35,
+    'Sequencing data' = 36:53,
     'Pantherdb protein data' = 54:58,
     'Gene Ontology data' = 59:64,
     'Pathway data' = 63:66

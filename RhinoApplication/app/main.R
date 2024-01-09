@@ -20,18 +20,15 @@ box::use(
 #' @export
 ui <- function(id) {
   ns <- NS(id)
-  
   page_sidebar(
     # Sidebar
     sidebar = sidebar(
-      width = 340,
+      width = "340px",
       open = c('open'),
       table_sidebar$ui(ns("options_sidebar"))
     ),
     # Main content
-    div(
-      meta_data_table$ui(ns("meta_data_table"))
-    )
+    meta_data_table$ui(ns("meta_data_table"))
   )
 
 }

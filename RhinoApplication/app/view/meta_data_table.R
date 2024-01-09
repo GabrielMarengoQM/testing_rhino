@@ -17,15 +17,9 @@ box::use(
 #' @export
 ui <- function(id) {
   ns <- NS(id)
-    withSpinner(
-      DTOutput(
-        ns("genesMetaDataDf")
-      ),
-      type = getOption("spinner.type", default = 1),
-      color = getOption("spinner.color", default = "#0275D8"),
-      size = getOption("spinner.size", default = 1),
-      color.background = getOption("spinner.color.background")
-    )
+    DTOutput(
+      ns("genesMetaDataDf")
+      )
 }
 
 #' @export

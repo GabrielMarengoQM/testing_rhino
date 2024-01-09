@@ -8,6 +8,7 @@ data_table <- function(table_data, headers, selected_columns) {
   datatable(
     table_data,
     class = 'cell-border stripe nowrap',
+    fillContainer = TRUE,
     container = headers,
     rownames = FALSE,
     plugins = "ellipsis",
@@ -70,8 +71,6 @@ data_table <- function(table_data, headers, selected_columns) {
   )
 }
   
-
-
 
 #' @export
 table_headers <- function() {

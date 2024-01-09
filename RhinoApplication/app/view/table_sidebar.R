@@ -21,11 +21,7 @@ ui <- function(id) {
       ns("select_data_table")
     ),
     dropdown(label = "MorPhiC Gene lists",
-             icon = icon("table"),
-             style = "bordered", 
-             status = "primary", 
              width = "300px",
-             size =  "sm",
              animate = animateOptions(
                enter = animations$fading_entrances$fadeInLeftBig,
                exit = animations$fading_exits$fadeOutLeft
@@ -39,12 +35,18 @@ ui <- function(id) {
              )
     ),
     hr(),
-    checkboxGroupInput(
+    pickerInput(
       ns("show_cols"),
       "Select meta data to display:",
-      c('DPCs studying Gene', 'Gene IDs', 'Mouse data', 'Disease data', 'Cell line data - gene constraint metrics', 
-        'Sequencing data - gene constraint metrics', 'Pantherdb protein data', 'Gene Ontology data', 'Pathway data'), 
+      c('DPCs studying Gene', 'Gene IDs', 'Mouse data', 'Disease data', 'Cell line data', 
+        'Sequencing data', 'Pantherdb protein data', 'Gene Ontology data', 'Pathway data'), 
       selected = c('DPCs studying Gene', 'Gene IDs', 'Mouse data', 'Disease data'),
+      multiple = TRUE,
+      options = pickerOptions(
+        actionsBox = TRUE,
+        showTick = TRUE,
+        width = "300px"
+      ),
       inline = FALSE
     )
   )
