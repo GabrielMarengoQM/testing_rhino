@@ -8,14 +8,13 @@ box::use(
 
 # Modules
 box::use(
-  #app/view[table_sidebar, meta_data_table], # for some reason this throws an error
   app/view/table_sidebar,
   app/view/meta_data_table,
 )
 
 # Rda data
 box::use(
-  app/logic/import_rda_data[...]
+  app/logic/import_rda_data
   )
 
 #' @export
@@ -30,7 +29,9 @@ ui <- function(id) {
       table_sidebar$ui(ns("options_sidebar"))
     ),
     # Main content
-    meta_data_table$ui(ns("meta_data_table"))
+    div(
+      meta_data_table$ui(ns("meta_data_table"))
+    )
   )
 
 }
@@ -38,10 +39,9 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    # dpc_gene_lists <- dpc_gene_list_data
-    # table_meta_data <- meta_data_table_data
-    table_options <- table_sidebar$server("options_sidebar")
+    table_data <- import_rda_data$meta_data_table_data()
+    selected_columns <- table_sidebar$server("options_sidebar")
     
-    meta_data_table$server("meta_data_table", table_options)
+    meta_data_table$server("meta_data_table", table_data, selected_columns)
   })
 }

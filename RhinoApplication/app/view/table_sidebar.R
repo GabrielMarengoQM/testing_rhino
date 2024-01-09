@@ -59,10 +59,7 @@ server <- function(id) {
     })
     
     output$select_data_table <- renderText('Select Gene list:')
-    
-    # dpc_selected <- reactive({"JAX"}) # Initialize with a default value
-    # show_cols <- reactive({c('DPCs studying Gene', 'Gene IDs', 'Mouse data', 'Disease data')})
-    
+
     output$current_table_view <- renderUI({
       header <- 'Current view: '
       dpc_selected <- input$select_dpcs
@@ -72,48 +69,7 @@ server <- function(id) {
       HTML(glue("<p>{header} <br> {body}</p>"))
     })
     
-    # observeEvent(input$select_dpcs, {
-    #   dpc_selected <- input$select_dpcs
-    # })
-    # 
-    # observeEvent(input$show_cols, {
-    #   show_cols <- input$show_cols
-    # })
-    
-    # list(
-    #   dpc_selected = dpc_selected,
-    #   show_cols = show_cols
-    # )
-    
-    ###
-    data_to_display1 <- reactiveVal()
-    #example_data <- utils$read_data_from_database()
-    
-    observeEvent(input$select_dpcs, {
-      # Updates the data_to_display reactive variable
-      data_to_display1(
-        input$select_dpcs
-      )
-    })
-    
-    # Returns the reactive
-   
-    #
-    data_to_display2 <- reactiveVal()
-    #example_data <- utils$read_data_from_database()
-    
-    observeEvent(input$show_cols, {
-      # Updates the data_to_display reactive variable
-      data_to_display2(
-        input$show_cols
-      )
-    })
-    
-    # Returns the reactive
-    list(
-      data_to_display1,
-      data_to_display2
-    )
+    selected_columns <- reactive(input$show_cols)   
   })
 }
 

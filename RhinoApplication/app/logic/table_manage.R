@@ -6,7 +6,7 @@ list_of_dpcs <- dpc_gene_list_data()
 genesMetaDataDf_data <- meta_data_table_data()
 
 #' @export
-getHiddenColumns_dpc_col2 <- function(selected_sources) {
+getHiddenColumns <- function(selected_sources) {
   source_to_columns <- list(
     
     'DPCs studying Gene' = 0,
