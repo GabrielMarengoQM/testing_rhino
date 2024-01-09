@@ -39,9 +39,11 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    table_data <- import_rda_data$meta_data_table_data()
-    selected_columns <- table_sidebar$server("options_sidebar")
     
-    meta_data_table$server("meta_data_table", table_data, selected_columns)
+    table_data <- import_rda_data$meta_data_table_data()
+    sidebar_data <- table_sidebar$server("options_sidebar")
+    
+    meta_data_table$server("meta_data_table", table_data, sidebar_data)
+    
   })
 }

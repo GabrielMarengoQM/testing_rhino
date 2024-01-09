@@ -69,7 +69,10 @@ server <- function(id) {
       HTML(glue("<p>{header} <br> {body}</p>"))
     })
     
-    selected_columns <- reactive(input$show_cols)   
+    list(
+      selected_columns = reactive(input$show_cols),
+      selected_dpc_gene_list = reactive(input$select_dpcs)
+    )
   })
 }
 
