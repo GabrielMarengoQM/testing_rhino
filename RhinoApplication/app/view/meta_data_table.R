@@ -35,7 +35,7 @@ server <- function(id, table_data, sidebar_data) {
       user_chosen_table_data <- table_manage$subsetGenesMetaDataDf_rowsOnly(user_chosen_gene_lists)
       
       create_table$data_table(user_chosen_table_data, headers, selected_columns)
-    })
+    }, server = TRUE)
 
     
   })

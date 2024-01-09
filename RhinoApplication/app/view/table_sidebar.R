@@ -56,11 +56,10 @@ ui <- function(id) {
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
     
-    output$current_table_view_header <- renderUI({
-      header <- 'Current view:'
-    })
+    # output$current_table_view_header <- renderUI({
+    #   header <- 'Current view:'
+    # })
     
-    output$select_data_table <- renderText('Select Gene list:')
 
     output$current_table_view <- renderUI({
       header <- 'Current view: '
@@ -70,6 +69,8 @@ server <- function(id) {
       
       HTML(glue("<p>{header} <br> {body}</p>"))
     })
+    
+    output$select_data_table <- renderText('Select Gene list:')
     
     list(
       selected_columns = reactive(input$show_cols),

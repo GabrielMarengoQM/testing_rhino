@@ -20,17 +20,36 @@ box::use(
 #' @export
 ui <- function(id) {
   ns <- NS(id)
-  page_sidebar(
-    # Sidebar
-    sidebar = sidebar(
-      width = "340px",
-      open = c('open'),
-      table_sidebar$ui(ns("options_sidebar"))
+  page_navbar(
+    title = "MorPhiC",
+    bg = "#0062cc",
+    nav_panel(
+      title = "Gene List Browser", 
+      page_sidebar(
+        # Sidebar
+        sidebar = sidebar(
+          width = "340px",
+          open = c('open'),
+          table_sidebar$ui(ns("options_sidebar"))
+        ),
+        # Main content
+        meta_data_table$ui(ns("meta_data_table"))
+      )
     ),
-    # Main content
-    meta_data_table$ui(ns("meta_data_table"))
+    nav_panel(
+      title = "Visualisations", 
+      h3("vis")),
+    nav_panel(
+      title = "Metadata Information",
+      h3("metadata")
+    ),
+    nav_spacer(),
+    nav_menu(
+      title = "Links",
+      align = "right",
+      nav_item(tags$a(href = 'https://morphic.bio/', "MorPhiC Home Page"))
+    )
   )
-
 }
 
 #' @export
