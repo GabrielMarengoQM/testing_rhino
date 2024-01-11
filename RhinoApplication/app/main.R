@@ -8,10 +8,7 @@ box::use(
 
 # Modules
 box::use(
-  app/view/table_sidebar,
-  app/view/meta_data_table,
-  app/view/visuals_sidebar,
-  app/view/visuals_layout
+  app/view[table_sidebar, meta_data_table, visuals_sidebar, visuals_layout, metadata_info_page]
 )
 
 # Rda data
@@ -47,7 +44,7 @@ ui <- function(id) {
     # Metadata Information tab
     nav_panel(
       title = "Metadata Information",
-      h3("metadata")
+      metadata_info_page$ui(ns("metadata_info_page"))
     ),
     nav_spacer(),
     # Links
@@ -69,10 +66,6 @@ server <- function(id) {
     meta_data_table$server("meta_data_table", table_data, sidebar_data)
     
     # Visualisations tab
-    visuals_sidebar_data1 <- visuals_sidebar$server("visuals_sidebar1")
-    # visuals_sidebar_data2 <- visuals_sidebar$server("visuals_sidebar2")
-    # visuals_sidebar_data3 <- visuals_sidebar$server("visuals_sidebar3")
-    # visuals_sidebar_data4 <- visuals_sidebar$server("visuals_sidebar4")
-    visuals_layout$server("visuals_layout", visuals_sidebar_data1)
+    visuals_layout$server("visuals_layout")
   })
 }

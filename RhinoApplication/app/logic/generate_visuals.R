@@ -1,7 +1,8 @@
 box::use(
   tidyverse[...],
   dplyr[...],
-  plotly[...]
+  plotly[plot_ly, layout, add_trace],
+  stats[...]
 )
 
 # Rda data
@@ -9,70 +10,121 @@ box::use(
   app/logic/import_rda_data[...]
 )
 
-list_of_dpcs <- dpc_gene_list_data()
-main.annotated.data.frame <- visuals_data()
-
 # Plots ----
-# FUNCTIONS ----
-
+# General ----
+# Takes as input selected data, utilises list of lists with [[1]] data + [[2]] name of data
 #' @export
-getGeneListsFromSelect_list <- function(selected_dpcs) {
+getDataFromUserSelect <- function(selected_data, data) {
   gene_lists <- list()
-  for (i in list_of_dpcs) {
-    if (i[[2]] %in% selected_dpcs) {
-      gene_lists <- append(gene_lists, list(i[[1]]))
-    }
-  }
-  return(gene_lists)
-}
-
-#' @export
-subsetGeneListsWithNames <- function(selected_dpcs) {
-  gene_lists <- list()
-  for (i in list_of_dpcs) {
-    if (i[[2]] %in% selected_dpcs) {
+  for (i in data) {
+    if (i[[2]] %in% selected_data) {
       gene_lists <- append(gene_lists, list(i))
     }
   }
   return(gene_lists)
 }
 
+# Mouse model data functions ----
+# Takes gene list, returns dataframe for plot
 #' @export
-getImpcPlotData <- function(gene_list) {
-  impc_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% gene_list, c('mgi_id', 'impc_viability')]
+getImpcPlotData <- function(gene_lists, data) {
   
-  impc_plot_data <- impc_data %>%
-    filter(mgi_id != "NA") %>%
-    filter(impc_viability != "NA") %>%
-    mutate(impc_viability_2 = ifelse(!impc_viability %in% c("lethal","subviable","viable"),
-                                     "conflicting", impc_viability)) %>%
-    group_by(impc_viability_2) %>%
-    tally() %>%
-    mutate(impc_viability_3 = factor(impc_viability_2,
-                                     levels = c("lethal","subviable","viable"))) %>%
-    mutate(percentage = (n/sum(n)*100))
+  main.annotated.data.frame <- data
   
-  # Remove conflicting rows 
-  impc_plot_data <- impc_plot_data[impc_plot_data$impc_viability_2 != "conflicting", ]
-  
-  # Round the numeric columns to 3 decimal places
-  impc_plot_data <- impc_plot_data %>%
-    mutate_at(vars('percentage'), list(~ round(., 3)))
-  
-  if (dim(impc_plot_data)[1] != 3) {
-    # if true then one category has 0 genes and needs to be filled
-    levels <- c('viable', 'subviable', 'lethal')
-    current_rows <- impc_plot_data$impc_viability_3
-    missing_rows <- levels[!levels %in% current_rows]
+  mouse_data_list <- list()
+  for (i in gene_lists) {
+    i <- i[[1]] # Get Data
     
-    # Add missing rows with a value of 0 for both 'n' and 'percentage'
-    missing_data <- data.frame(impc_viability_3 = missing_rows, n = 0, percentage = 0)
+    impc_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('mgi_id', 'impc_viability')]
+    impc_plot_data <- impc_data %>%
+      dplyr::filter(mgi_id != "NA") %>%
+      dplyr::filter(impc_viability != "NA") %>%
+      dplyr::mutate(impc_viability_2 = ifelse(!impc_viability %in% c("lethal","subviable","viable"),
+                                              "conflicting", impc_viability)) %>%
+      dplyr::group_by(impc_viability_2) %>%
+      dplyr::tally() %>%
+      dplyr::mutate(impc_viability_3 = factor(impc_viability_2,
+                                              levels = c("lethal","subviable","viable"))) %>%
+      dplyr::mutate(percentage = (n/sum(n)*100))
     
-    # Update impc_plot_data with the missing rows
-    impc_plot_data <- bind_rows(impc_plot_data, missing_data)
+    # Remove conflicting rows 
+    impc_plot_data <- impc_plot_data[impc_plot_data$impc_viability_2 != "conflicting", ]
+    
+    # Round the numeric columns to 3 decimal places
+    impc_plot_data <- impc_plot_data %>%
+      dplyr::mutate_at(vars('percentage'), list(~ round(., 3)))
+    
+    if (dim(impc_plot_data)[1] != 3) {
+      # if true then one category has 0 genes and needs to be filled
+      levels <- c('viable', 'subviable', 'lethal')
+      current_rows <- impc_plot_data$impc_viability_3
+      missing_rows <- levels[!levels %in% current_rows]
+      
+      # Add missing rows with a value of 0 for both 'n' and 'percentage'
+      missing_data <- data.frame(impc_viability_3 = missing_rows, n = 0, percentage = 0)
+      
+      # Update impc_plot_data with the missing rows
+      impc_plot_data <- bind_rows(impc_plot_data, missing_data)
+    }
+    
+    mouse_data_list <- c(mouse_data_list, list(impc_plot_data))
   }
   
-  return(impc_plot_data)
+  return(mouse_data_list)
+}
+
+# Takes impc data frame, create plotly plot
+#' @export
+generateImpcPlot <- function(impc_plot_data) {
+  # conflicted::conflicts_prefer(plotly::layout)
+  x_axis <- c("lethal", "subviable", "viable")
+  data <- impc_plot_data[, c('impc_viability_3', 'percentage')]
+  new_col_names <- c("x_axis", "percentage")
+  colnames(data) <- new_col_names
+  
+  impc_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
+                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
+  
+  return(impc_plot)
+}
+
+# Takes gene lists & impc data frames, creates plotly plot with multiple traces
+#' @export
+generateMultipleTracesImpcPlot <- function(plots, gene_lists_for_plots) {
+  percentage_cols <- lapply(plots, function(plot) plot$percentage)
+  
+  # Bind the percentage column
+  df <- data.frame(x_axis = c("lethal", "subviable", "viable"))
+  df <- bind_cols(df, !!!percentage_cols)
+  # Rename the columns
+  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+  
+  # Create column names for the dataframe
+  col_names <- c("x_axis", list_names)
+  
+  # Assign column names to your dataframe (replace df with your actual dataframe)
+  colnames(df) <- col_names
+  # set y_col as first value name for initial plotly obj
+  y_col <- names(df)[2] # first value after xaxis column
+  y_col
+  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
+  p
+  # set y_cols2 for rest of value names for traces
+  y_cols1<- names(df)[-1]
+  y_cols2 <- y_cols1[-1]
+  # Add traces
+  for (i in y_cols2) {
+    text_col <- paste0("text_", i)  # New variable for dynamic text
+    df[[text_col]] <- df[[i]]
+    
+    p <- p %>%
+      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+  }
+  # Print the resulting plot
+  p
 }
 
 #' @export
@@ -112,21 +164,6 @@ getMgiPlotData <- function(gene_list) {
   }
   
   return(mgi_plot_data)
-}
-
-#' @export
-generateImpcPlot <- function(impc_plot_data) {
-  # conflicted::conflicts_prefer(plotly::layout)
-  x_axis <- c("lethal", "subviable", "viable")
-  data <- impc_plot_data[, c('impc_viability_3', 'percentage')]
-  new_col_names <- c("x_axis", "percentage")
-  colnames(data) <- new_col_names
-  
-  impc_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
-  
-  return(impc_plot)
 }
 
 #' @export

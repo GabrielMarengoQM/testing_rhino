@@ -37,7 +37,7 @@ ui <- function(id) {
           sidebar = sidebar(
             width = "340px",
             open = c('open'),
-            visuals_sidebar$ui(ns("visuals_sidebar1"))
+            visuals_sidebar$ui(ns("sidebar_data_impc"))
           ),
           # Main content
           plotlyOutput(ns("impc_chart"))
@@ -138,70 +138,26 @@ ui <- function(id) {
 }
 
 #' @export
-server <- function(id, visuals_sidebar_data1) {
+server <- function(id) {
   moduleServer(id, function(input, output, session) {
     
-    visuals_sidebar_data1 <- visuals_sidebar$server("visuals_sidebar1")
-    # visuals_sidebar$server("visuals_sidebar2")
-    # visuals_sidebar$server("visuals_sidebar3")
-    # visuals_sidebar$server("visuals_sidebar4")
+    # Get sidebar inputs
+    sidebar_input_impc_barchart <- visuals_sidebar$server("sidebar_data_impc")
     
-    getMousePlotsDataImpc <- reactive({
-      
-      gene_lists_for_plots <- generate_visuals$getGeneListsFromSelect_list(visuals_sidebar_data1())
-      
-      mouse_data_list <- list()
-      for (i in gene_lists_for_plots) {
-        mouse_data <- generate_visuals$getImpcPlotData(i)
-        mouse_data_list <- c(mouse_data_list, list(mouse_data))
-      }
-      return(mouse_data_list)
-    })
+    # Get gene list data and meta data
+    gene_list_data <- import_rda_data$dpc_gene_list_data()
+    meta_data <- import_rda_data$visuals_data()
     
     output$impc_chart <- renderPlotly({
-      plots <- getMousePlotsDataImpc()
+      # Generate plot data frames
+      gene_lists_for_plots <- generate_visuals$getDataFromUserSelect(sidebar_input_impc_barchart(), gene_list_data)
+      plots <- generate_visuals$getImpcPlotData(gene_lists_for_plots, meta_data)
+      
+      # Generate bar charts
       if (length(plots) == 1) {
         generate_visuals$generateImpcPlot(plots[[1]])
       } else if (length(plots) > 1) {
-        #generateImpcPlot(plots[[2]])
-        plots
-        percentage_cols <- lapply(plots, function(plot) plot$percentage)
-        
-        # Bind the percentage column
-        df <- data.frame(x_axis = c("lethal", "subviable", "viable"))
-        df <- bind_cols(df, !!!percentage_cols)
-        # Rename the columns
-        #colnames(df) <- c("x_axis", paste0("percentage_set", 1:length(percentage_cols)))
-        # Extract the second elements (list names) from gene_lists_for_plots
-        gene_lists_for_plots <- generate_visuals$subsetGeneListsWithNames(visuals_sidebar_data1())
-        
-        list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-        
-        # Create column names for the dataframe
-        col_names <- c("x_axis", list_names)
-        
-        # Assign column names to your dataframe (replace df with your actual dataframe)
-        colnames(df) <- col_names
-        # set y_col as first value name for initial plotly obj
-        y_col <- names(df)[2] # first value after xaxis column
-        y_col
-        p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
-                     type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
-          plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
-        p
-        # set y_cols2 for rest of value names for traces
-        y_cols1<- names(df)[-1]
-        y_cols2 <- y_cols1[-1]
-        # Add traces
-        for (i in y_cols2) {
-          text_col <- paste0("text_", i)  # New variable for dynamic text
-          df[[text_col]] <- df[[i]]
-          
-          p <- p %>%
-            add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
-        }
-        # Print the resulting plot
-        p
+        generate_visuals$generateMultipleTracesImpcPlot(plots, gene_lists_for_plots)
       }
     }) 
 
