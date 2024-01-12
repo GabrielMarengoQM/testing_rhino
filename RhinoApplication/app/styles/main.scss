@@ -1,8 +1,13 @@
 /* styles.css */
+@mixin shadow {
+  box-shadow:
+  0 4px 8px 0 rgba(0, 0, 0, 0.2),
+  0 6px 20px 0 rgba(0, 0, 0, 0.2);
+}
 
 /* Table border */
 .dataTables_scroll {
-  border: 1px solid #ddd; 
+  @include shadow;
 }
 
 /* Enable fixed header */
@@ -40,3 +45,9 @@
   bottom: 0;
   right: 0;
 }
+
+/*  Center dropdown text 
+.form-group.shiny-input-container {
+  text-align: center;
+}
+*/

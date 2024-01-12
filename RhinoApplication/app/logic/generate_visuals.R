@@ -128,44 +128,53 @@ generateMultipleTracesImpcPlot <- function(plots, gene_lists_for_plots) {
 }
 
 #' @export
-getMgiPlotData <- function(gene_list) {
+getMgiPlotData <- function(gene_lists, data) {
   
-  mgi_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% gene_list, c('mgi_id', 'mgi_viability')]
+  main.annotated.data.frame <- data
   
-  mgi_plot_data <- mgi_data %>%
-    filter(mgi_id != "NA") %>%
-    filter(mgi_viability != "NA") %>%
-    mutate(mgi_viability_2 = ifelse(!mgi_viability %in% c("lethal", "viable"),
-                                    "conflicting", mgi_viability)) %>%
-    group_by(mgi_viability_2) %>%
-    tally() %>%
-    mutate(mgi_viability_3 = factor(mgi_viability_2,
-                                    levels = c("lethal", "viable"))) %>%
-    mutate(percentage = (n/sum(n)*100))
-  
-  # Remove conflicting rows 
-  mgi_plot_data <- mgi_plot_data[mgi_plot_data$mgi_viability_2 != "conflicting", ]
-  
-  # Round the numeric columns to 3 decimal places
-  mgi_plot_data <- mgi_plot_data %>%
-    mutate_at(vars('percentage'), list(~ round(., 3)))
-  
-  if (dim(mgi_plot_data)[1] != 2) {
-    # if true then one category has 0 genes and needs to be filled
-    levels <- c('viable', 'lethal')
-    current_rows <- mgi_plot_data$mgi_viability_3
-    missing_rows <- levels[!levels %in% current_rows]
+  mouse_data_list <- list()
+  for (i in gene_lists) {
+    i <- i[[1]] # Get Data
     
-    # Add missing rows with a value of 0 for both 'n' and 'percentage'
-    missing_data <- data.frame(mgi_viability_3 = missing_rows, n = 0, percentage = 0)
+    mgi_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('mgi_id', 'mgi_viability')]
+    mgi_plot_data <- mgi_data %>%
+      dplyr::filter(mgi_id != "NA") %>%
+      dplyr::filter(mgi_viability != "NA") %>%
+      dplyr::mutate(mgi_viability_2 = ifelse(!mgi_viability %in% c("lethal", "viable"),
+                                              "conflicting", mgi_viability)) %>%
+      dplyr::group_by(mgi_viability_2) %>%
+      dplyr::tally() %>%
+      dplyr::mutate(mgi_viability_3 = factor(mgi_viability_2,
+                                              levels = c("lethal", "viable"))) %>%
+      dplyr::mutate(percentage = (n/sum(n)*100))
     
-    # Update impc_plot_data with the missing rows
-    mgi_plot_data <- bind_rows(mgi_plot_data, missing_data)
+    # Remove conflicting rows 
+    mgi_plot_data <- mgi_plot_data[mgi_plot_data$mgi_viability_2 != "conflicting", ]
+    
+    # Round the numeric columns to 3 decimal places
+    mgi_plot_data <- mgi_plot_data %>%
+      dplyr::mutate_at(vars('percentage'), list(~ round(., 3)))
+    
+    if (dim(mgi_plot_data)[1] != 2) {
+      # if true then one category has 0 genes and needs to be filled
+      levels <- c('viable', 'lethal')
+      current_rows <- mgi_plot_data$mgi_viability_3
+      missing_rows <- levels[!levels %in% current_rows]
+      
+      # Add missing rows with a value of 0 for both 'n' and 'percentage'
+      missing_data <- data.frame(mgi_viability_3 = missing_rows, n = 0, percentage = 0)
+      
+      # Update mgi_plot_data with the missing rows
+      mgi_plot_data <- bind_rows(mgi_plot_data, missing_data)
+    }
+    
+    mouse_data_list <- c(mouse_data_list, list(mgi_plot_data))
   }
   
-  return(mgi_plot_data)
+  return(mouse_data_list)
 }
 
+# Takes impc data frame, create plotly plot
 #' @export
 generateMgiPlot <- function(mgi_plot_data) {
   # conflicted::conflicts_prefer(plotly::layout)
@@ -175,44 +184,92 @@ generateMgiPlot <- function(mgi_plot_data) {
   colnames(data) <- new_col_names
   
   mgi_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                      name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'MGI viability assessment'))
+                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'mgi preweaning viability assessment'))
   
   return(mgi_plot)
 }
 
+# Takes gene lists & mgi data frames, creates plotly plot with multiple traces
+#' @export
+generateMultipleTracesMgiPlot <- function(plots, gene_lists_for_plots) {
+  percentage_cols <- lapply(plots, function(plot) plot$percentage)
+  
+  # Bind the percentage column
+  df <- data.frame(x_axis = c("lethal", "viable"))
+  df <- bind_cols(df, !!!percentage_cols)
+  # Rename the columns
+  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+  
+  # Create column names for the dataframe
+  col_names <- c("x_axis", list_names)
+  
+  # Assign column names to your dataframe (replace df with your actual dataframe)
+  colnames(df) <- col_names
+  # set y_col as first value name for initial plotly obj
+  y_col <- names(df)[2] # first value after xaxis column
+  y_col
+  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'MGI preweaning viability assessment'))
+  p
+  # set y_cols2 for rest of value names for traces
+  y_cols1<- names(df)[-1]
+  y_cols2 <- y_cols1[-1]
+  # Add traces
+  for (i in y_cols2) {
+    text_col <- paste0("text_", i)  # New variable for dynamic text
+    df[[text_col]] <- df[[i]]
+    
+    p <- p %>%
+      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+  }
+  # Print the resulting plot
+  p
+}
+
+
 # disease plots ----
 #' @export
-getHasOmimPlotData <- function(gene_list) {
+getHasOmimPlotData <- function(gene_lists, data) {
   
-  omim_data <- genesMetaDataDf_data[genesMetaDataDf_data$gene_symbol %in% gene_list, c('hgnc_id', 'omim_phenotype_name')]
+  main.annotated.data.frame <- data
   
-  omim_plot_data <- omim_data %>%
-    mutate(has_omim_phenotype = if_else(!is.na(omim_phenotype_name), "yes", "no"))
-  
-  omim_summary_data <- omim_plot_data %>%
-    group_by(has_omim_phenotype) %>%
-    summarize(count = n()) %>%
-    mutate(percentage = (count / sum(count)) * 100)
-  
-  # Round the numeric columns to 3 decimal places
-  omim_summary_data <- omim_summary_data %>%
-    mutate_at(vars('percentage'), list(~ round(., 3)))
-  
-  if (dim(omim_summary_data)[1] != 2) {
-    # if true then one category has 0 genes and needs to be filled
-    levels <- c('yes', 'no')
-    current_rows <- omim_summary_data$has_omim_phenotype
-    missing_rows <- levels[!levels %in% current_rows]
+  omim_data_list <- list()
+  for (i in gene_lists) {
+    i <- i[[1]] # Get Data
     
-    # Add missing rows with a value of 0 for both 'n' and 'percentage'
-    missing_data <- data.frame(has_omim_phenotype = missing_rows, n = 0, percentage = 0)
+    omim_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('hgnc_id', 'omim_phenotype')]
     
-    # Update impc_plot_data with the missing rows
-    omim_summary_data <- bind_rows(omim_summary_data, missing_data)
+    omim_plot_data <- omim_data %>%
+      mutate(has_omim_phenotype = if_else(!is.na(omim_phenotype), "yes", "no"))
+    
+    omim_summary_data <- omim_plot_data %>%
+      group_by(has_omim_phenotype) %>%
+      summarize(count = n()) %>%
+      mutate(percentage = (count / sum(count)) * 100)
+    
+    # Round the numeric columns to 3 decimal places
+    omim_summary_data <- omim_summary_data %>%
+      mutate_at(vars('percentage'), list(~ round(., 3)))
+    
+    if (dim(omim_summary_data)[1] != 2) {
+      # if true then one category has 0 genes and needs to be filled
+      levels <- c('yes', 'no')
+      current_rows <- omim_summary_data$has_omim_phenotype
+      missing_rows <- levels[!levels %in% current_rows]
+      
+      # Add missing rows with a value of 0 for both 'n' and 'percentage'
+      missing_data <- data.frame(has_omim_phenotype = missing_rows, n = 0, percentage = 0)
+      
+      # Update impc_plot_data with the missing rows
+      omim_summary_data <- bind_rows(omim_summary_data, missing_data)
+    }
+    
+    omim_data_list <- c(omim_data_list, list(omim_summary_data))
   }
-  
-  return(omim_summary_data)
+
+  return(omim_data_list)
 }
 
 #' @export
@@ -231,35 +288,80 @@ generateHasOmimPlot <- function(omim_summary_data) {
 }
 
 #' @export
-getOmimLethalityPlotData <- function(gene_list) {
+generateMultipleTracesHasOmimPlot <- function(plots, gene_lists_for_plots) {
+  percentage_cols <- lapply(plots, function(plot) plot$percentage)
   
-  omim_lethality_data <- genesMetaDataDf_data[genesMetaDataDf_data$gene_symbol %in% gene_list, c('hgnc_id', 'omim_gene_lethality')]
+  # Bind the percentage column
+  df <- data.frame(x_axis = c("yes", "no"))
+  df <- bind_cols(df, !!!percentage_cols)
+  # Rename the columns
+  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
   
-  omim_summary_data <- omim_lethality_data %>%
-    filter(!is.na(omim_gene_lethality)) %>%
-    filter(omim_gene_lethality %in% c("lethal", "nonlethal")) %>%
-    group_by(omim_gene_lethality) %>%
-    summarize(count = n()) %>%
-    mutate(percentage = (count / sum(count)) * 100)
+  # Create column names for the dataframe
+  col_names <- c("x_axis", list_names)
   
-  # Round the numeric columns to 3 decimal places
-  omim_lethality_summary_data <- omim_summary_data %>%
-    mutate_at(vars('percentage'), list(~ round(., 3)))
-  
-  if (dim(omim_lethality_summary_data)[1] != 2) {
-    # if true then one category has 0 genes and needs to be filled
-    levels <- c("lethal", "nonlethal")
-    current_rows <- omim_lethality_summary_data$omim_gene_lethality
-    missing_rows <- levels[!levels %in% current_rows]
+  # Assign column names to your dataframe (replace df with your actual dataframe)
+  colnames(df) <- col_names
+  # set y_col as first value name for initial plotly obj
+  y_col <- names(df)[2] # first value after xaxis column
+  y_col
+  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
+  p
+  # set y_cols2 for rest of value names for traces
+  y_cols1<- names(df)[-1]
+  y_cols2 <- y_cols1[-1]
+  # Add traces
+  for (i in y_cols2) {
+    text_col <- paste0("text_", i)  # New variable for dynamic text
+    df[[text_col]] <- df[[i]]
     
-    # Add missing rows with a value of 0 for both 'n' and 'percentage'
-    missing_data <- data.frame(omim_gene_lethality = missing_rows, n = 0, percentage = 0)
-    
-    # Update impc_plot_data with the missing rows
-    omim_lethality_summary_data <- bind_rows(omim_lethality_summary_data, missing_data)
+    p <- p %>%
+      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
   }
+  # Print the resulting plot
+  p
+}
+
+#' @export
+getOmimLethalityPlotData <- function(gene_lists, data) {
   
-  return(omim_lethality_summary_data)
+  main.annotated.data.frame <- data
+  
+  omim_data_list <- list()
+  for (i in gene_lists) {
+    i <- i[[1]] # Get Data
+    
+    omim_lethality_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('hgnc_id', 'omim_gene_lethality')]
+    
+    omim_summary_data <- omim_lethality_data %>%
+      dplyr::filter(!is.na(omim_gene_lethality)) %>%
+      dplyr::filter(omim_gene_lethality %in% c("lethal", "nonlethal")) %>%
+      dplyr::group_by(omim_gene_lethality) %>%
+      dplyr::summarize(count = n()) %>%
+      dplyr::mutate(percentage = (count / sum(count)) * 100)
+    
+    # Round the numeric columns to 3 decimal places
+    omim_lethality_summary_data <- omim_summary_data %>%
+      dplyr::mutate_at(vars('percentage'), list(~ round(., 3)))
+    
+    if (dim(omim_lethality_summary_data)[1] != 2) {
+      # if true then one category has 0 genes and needs to be filled
+      levels <- c("lethal", "nonlethal")
+      current_rows <- omim_lethality_summary_data$omim_gene_lethality
+      missing_rows <- levels[!levels %in% current_rows]
+      
+      # Add missing rows with a value of 0 for both 'n' and 'percentage'
+      missing_data <- data.frame(omim_gene_lethality = missing_rows, n = 0, percentage = 0)
+      
+      # Update impc_plot_data with the missing rows
+      omim_lethality_summary_data <- bind_rows(omim_lethality_summary_data, missing_data)
+    }
+    
+    omim_data_list <- c(omim_data_list, list(omim_lethality_summary_data))
+  }
+  return(omim_data_list)
 }
 
 #' @export
@@ -275,6 +377,43 @@ generateOmimLethalityPlot <- function(omim_lethality_summary_data) {
     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
   
   return(omim_lethality_plot)
+}
+
+#' @export
+generateMultipleTracesOmimLethalityPlot <- function(plots, gene_lists_for_plots) {
+  percentage_cols <- lapply(plots, function(plot) plot$percentage)
+  
+  # Bind the percentage column
+  df <- data.frame(x_axis = c("lethal", "nonlethal"))
+  df <- bind_cols(df, !!!percentage_cols)
+  # Rename the columns
+  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+  
+  # Create column names for the dataframe
+  col_names <- c("x_axis", list_names)
+  
+  # Assign column names to your dataframe (replace df with your actual dataframe)
+  colnames(df) <- col_names
+  # set y_col as first value name for initial plotly obj
+  y_col <- names(df)[2] # first value after xaxis column
+  y_col
+  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
+  p
+  # set y_cols2 for rest of value names for traces
+  y_cols1<- names(df)[-1]
+  y_cols2 <- y_cols1[-1]
+  # Add traces
+  for (i in y_cols2) {
+    text_col <- paste0("text_", i)  # New variable for dynamic text
+    df[[text_col]] <- df[[i]]
+    
+    p <- p %>%
+      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+  }
+  # Print the resulting plot
+  p
 }
 
 #' @export

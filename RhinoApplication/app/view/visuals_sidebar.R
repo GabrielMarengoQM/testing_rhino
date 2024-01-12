@@ -20,26 +20,25 @@ box::use(
 ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(
-      ns("current_visuals_view")
-    ),
-    hr(),
-    textOutput(
-      ns("select_visuals_view")
-    ),
-    dropdown(label = "MorPhiC Gene lists",
-             width = "300px",
-             animate = animateOptions(
-               enter = animations$fading_entrances$fadeInLeftBig,
-               exit = animations$fading_exits$fadeOutLeft
-             ),
-             selectInput(
-               ns("select_dpcs_vis"), 
-               "Select Data Production Center", 
-               c("JAX", "MSK", "NWU", "UCSF"),
-               multiple = TRUE,
-               selected = "JAX"
-             )
+    # uiOutput(
+    #   ns("current_visuals_view")
+    # ),
+    # hr(),
+    # textOutput(
+    #   ns("select_visuals_view")
+    # ),
+    pickerInput(
+      ns("select_dpcs_vis"),
+      "Select Data Production Center",
+      c("JAX", "MSK", "NWU", "UCSF"),
+      multiple = TRUE,
+      selected = "JAX",
+      options = pickerOptions(
+        actionsBox = TRUE,
+        showTick = TRUE,
+        width = "300px"
+      ),
+      inline = FALSE
     )
   )
 }
