@@ -14,3 +14,8 @@ meta_data_table_data <- function() {
 visuals_data <- function() {
   main.annotated.data.frame <- readRDS('/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/main.annotated.data.frame.rda')
 }
+
+#' @export
+constraint_metrics <- function() {
+  gene.constraint.metrics.num.only <- readRDS('/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/gene.constraint.metrics.num.only.rda')
+}

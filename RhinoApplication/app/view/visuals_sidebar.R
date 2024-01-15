@@ -20,13 +20,6 @@ box::use(
 ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # uiOutput(
-    #   ns("current_visuals_view")
-    # ),
-    # hr(),
-    # textOutput(
-    #   ns("select_visuals_view")
-    # ),
     pickerInput(
       ns("select_dpcs_vis"),
       "Select Data Production Center",

@@ -1,7 +1,8 @@
 box::use(
   tidyverse[...],
   dplyr[...],
-  plotly[plot_ly, layout, add_trace],
+  #plotly[plot_ly, layout, add_trace],
+  plotly[...],
   stats[...]
 )
 
@@ -417,28 +418,36 @@ generateMultipleTracesOmimLethalityPlot <- function(plots, gene_lists_for_plots)
 }
 
 #' @export
-constraintMetricsPlots <- function(gene_lists_for_plots, metric_col_name, x_axis_text) {
+constraintMetricsPlots <- function(gene_lists_for_plots, meta_data, metric_col_name, x_axis_text) {
+  
+  main.annotated.data.frame <- meta_data
+  # Get list of tibbles with gene_symbol & corresponding metric value
   metrics_data_list <- list()
   for (i in gene_lists_for_plots) {
-    metrics_data <- gene.constraint.metrics.num.only[gene.constraint.metrics.num.only$gene_symbol %in% (i[[1]]), c('gene_symbol', metric_col_name)]
+    metrics_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% (i[[1]]), c('gene_symbol', metric_col_name)]
     metrics_data_list <- c(metrics_data_list, list(metrics_data))
   }
-  
+  # Combine into one df with one column for each gene list
   df <- purrr::reduce(metrics_data_list, full_join, by = "gene_symbol")
   
-  # Extract the second elements (list names) from gene_lists_for_plots
+  # Assign new column names
+  # Extract the list names from gene_lists_for_plots
   list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-  
-  # Create column names for the dataframe
   col_names <- c("x_axis", list_names)
-  
-  # Assign column names to your dataframe (replace df with your actual dataframe)
   colnames(df) <- col_names
+
   # set y_col as first value name for initial plotly obj
   y_col <- names(df)[2] # first value after xaxis column
-  y_col
-  p <- plot_ly(df, y = as.formula(paste0("~", y_col)), x = y_col, name = y_col, type = "violin", box = list(visible = T),
-               hoverinfo = "text", hovertext = paste("Gene Symbol: ", df$x_axis, "<br>", x_axis_text, df[[y_col]])) %>%
+  # Generate plot
+  p <- plot_ly(df, 
+               y = as.formula(paste0("~", y_col)), 
+               x = y_col, 
+               name = y_col, 
+               type = "violin", 
+               box = list(visible = T),
+               hoverinfo = "text", 
+               hovertext = paste("Gene Symbol: ", df$x_axis, "<br>", x_axis_text, df[[y_col]])
+               ) %>%
     plotly::layout(yaxis = list(title = x_axis_text))
   
   # set y_cols2 for rest of value names for traces
@@ -459,17 +468,20 @@ constraintMetricsPlots <- function(gene_lists_for_plots, metric_col_name, x_axis
 
 # Gene search highlight data point
 #' @export
-addGeneTrace <- function(plot, col, gene, x_axis_text) {
+addGeneTrace <- function(meta_data, plot, gene, col, x_axis_text) {
+  print("received gene input:")
+  print(gene)
   for (i in plot$x$attrs) {
     plot <- plot %>%
       add_trace(
-        y = gene.constraint.metrics.num.only[[col]][gene.constraint.metrics.num.only$gene_symbol == gene],
+        y = meta_data[[col]][meta_data$gene_symbol == gene],
         x = i$x, 
         name = gene,
         hoverinfo = "text", 
         hovertext = paste("Gene Symbol: ", gene, "<br>", x_axis_text, 
-                          gene.constraint.metrics.num.only[[col]][gene.constraint.metrics.num.only$gene_symbol == gene]),
-        type = "scatter", mode = 'markers'
+                          meta_data[[col]][meta_data$gene_symbol == gene]),
+        type = "scatter", 
+        mode = 'markers'
       )
   }
   return(plot)
@@ -488,3 +500,66 @@ hline <- function(y = 0, color = "grey") {
     line = list(dash = "dash", color = color)
   )
 }
+
+#' @export
+getViolinPlotData <- function(data, column, gene_lists) {
+  
+  # Get list of tibbles with gene_symbol & corresponding metric value
+  all_data_df <- data.frame()
+  
+  for (i in gene_lists) {
+    gene_list_name <- i[[2]]
+    metrics_data <- data[data$gene_symbol %in% (i[[1]]), c('gene_symbol', column)] # gene symbol + corresponding metric value
+    
+    # Add gene_list_name column
+    metrics_data$gene_list_name <- gene_list_name
+    
+    # Bind rows to the existing dataframe
+    all_data_df <- rbind(all_data_df, metrics_data)
+  }
+  
+  return(all_data_df)
+  
+}
+
+#' @export
+getHighlitedGenes <- function(input_string) {
+
+  return(strsplit(input_string, ",\\s*")[[1]])
+
+}
+
+#' @export
+renderViolinPlot <- function(data, column, genes_to_highlight) {
+  # Your existing code for creating the violin plots
+  violin_plot <- plot_ly(
+    data,
+    y = as.formula(paste("~", column)),
+    x = ~gene_list_name,
+    type = "violin",
+    name = ~gene_list_name,
+    text = ~paste("Gene: ", gene_symbol, "<br>", column, ": ", lof_oe),
+    hoverinfo = "text"  # Include gene symbol and metric value in hover text
+  )
+  
+  # Add highlight points for individual genes
+  if (length(genes_to_highlight > 0)) {
+    violin_plot <- violin_plot %>%
+      highlight("plotly_selecting") %>%
+      # Add points for highlighting
+      add_trace(
+        data = data[data$gene_symbol %in% genes_to_highlight, ],  # Only include specified genes
+        type = "scatter",
+        mode = "markers",
+        x = ~gene_list_name,
+        y = ~lof_oe,
+        text = ~paste("Gene: ", gene_symbol, "<br>", column, ": ", lof_oe),
+        marker = list(color = "black", size = 10),
+        hoverinfo = "text",
+        name = "Searched Genes"  # Legend entry for the added trace
+      )
+  }
+  return(violin_plot)
+}
+
+

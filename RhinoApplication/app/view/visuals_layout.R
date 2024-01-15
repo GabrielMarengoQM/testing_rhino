@@ -12,7 +12,7 @@ box::use(
 
 # Modules
 box::use(
-  app/view/visuals_sidebar,
+  app/view[visuals_sidebar, visuals_violinplots_sidebar],
   app/logic/generate_visuals
 )
 
@@ -104,16 +104,22 @@ ui <- function(id) {
     navset_card_tab(
       height = 450,
       full_screen = TRUE,
-      title = "HTML Widgets",
+      title = "Gene constraint metrics",
       nav_panel(
-        "Plotly",
-        card_title("A plotly plot"),
-        h3("info")
-      ),
-      nav_panel(
-        "Leaflet",
-        card_title("A leaflet plot"),
-        h3("plot")
+        "Sequencing",
+        page_sidebar(
+          # Sidebar
+          sidebar = sidebar(
+            width = "340px",
+            open = c('open'),
+            visuals_violinplots_sidebar$ui(ns("sidebar_data_sequencing"))
+          ),
+          # Main content
+          layout_column_wrap(
+            width = 1/2,
+            plotlyOutput(ns("gnomad_lof"))
+          )
+        ),
       ),
       nav_panel(
         shiny::icon("circle-info"),
@@ -150,10 +156,12 @@ server <- function(id) {
     sidebar_input_impc_barchart <- visuals_sidebar$server("sidebar_data_impc")
     sidebar_input_mgi_barchart <- visuals_sidebar$server("sidebar_data_mgi")
     sidebar_input_omim_barchart <- visuals_sidebar$server("sidebar_data_omim")
+    sidebar_input_sequencing_violinplots <- visuals_violinplots_sidebar$server("sidebar_data_sequencing")
     
     # Get gene list data and meta data
     gene_list_data <- import_rda_data$dpc_gene_list_data()
     meta_data <- import_rda_data$visuals_data()
+    constraint_metrics_plot_data <- import_rda_data$constraint_metrics()
     
     output$impc_chart <- renderPlotly({
       req(!is.null(sidebar_input_impc_barchart()))
@@ -218,6 +226,21 @@ server <- function(id) {
       }
     }) %>%
       bindCache(sidebar_input_omim_barchart())
+    
+    output$gnomad_lof <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'lof_oe'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight)
+      
+    }) %>%
+      bindCache(c(sidebar_input_sequencing_violinplots$selected_dpc(), sidebar_input_sequencing_violinplots$gene_search_input()))
+ 
+    
 
   })
 }

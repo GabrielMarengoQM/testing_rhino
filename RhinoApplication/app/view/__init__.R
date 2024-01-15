@@ -7,5 +7,6 @@ box::use(
   app/view/meta_data_table,
   app/view/visuals_sidebar,
   app/view/visuals_layout,
-  app/view/metadata_info_page
+  app/view/metadata_info_page,
+  app/view/visuals_violinplots_sidebar
 )
