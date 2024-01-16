@@ -5,6 +5,11 @@ dpc_gene_list_data <- function() {
 }
 
 #' @export
+morphic_gene_list_data <- function() {
+  morphic_gene_list_data <- readRDS("/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/morphic_gene_list_data.rda")
+}
+
+#' @export
 meta_data_table_data <- function() {
   #genesMetaDataDf_data <- readRDS('../../../rda/all_genes_with_anot_jan2.rda')
   genesMetaDataDf_data <- readRDS('/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/all_genes_with_anot_jan2.rda')

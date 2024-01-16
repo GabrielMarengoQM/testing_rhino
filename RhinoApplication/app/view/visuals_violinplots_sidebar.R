@@ -35,8 +35,8 @@ ui <- function(id) {
     ),
     pickerInput(
       ns("select_dpcs_vis"),
-      "Select Data Production Center",
-      c("JAX", "MSK", "NWU", "UCSF"),
+      "Select Data Gene List",
+      c("JAX", "MSK", "NWU", "UCSF", "All protein coding genes"),
       multiple = TRUE,
       selected = "JAX",
       options = pickerOptions(
@@ -45,6 +45,11 @@ ui <- function(id) {
         width = "100%"
       ),
       inline = FALSE
+    ),
+    checkboxInput(
+      ns("toggle_all_data_points"),
+      label = "Show all data points",
+      width = "100%"
     )
   )
 }
@@ -53,17 +58,11 @@ ui <- function(id) {
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
     
-    # reactive_value <- reactiveVal("")
-    # 
-    # observeEvent(input$search_gene, {
-    #   reactive_value(input$search_gene)
-    # })
-    
     list(
       selected_dpc = reactive(input$select_dpcs_vis),
-      # gene_search_input = reactive(reactive_value())
-      #gene_search_input = reactive(input$search_gene)
-      gene_search_input = reactive(input$search_gene)
+      gene_search_input = reactive(input$search_gene),
+      show_all_data_points = reactive(input$toggle_all_data_points)
     )
+    
   })
 }

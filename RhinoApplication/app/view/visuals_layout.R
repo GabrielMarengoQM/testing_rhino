@@ -108,6 +108,7 @@ ui <- function(id) {
       nav_panel(
         "Sequencing",
         page_sidebar(
+          fillable = FALSE,
           # Sidebar
           sidebar = sidebar(
             width = "340px",
@@ -117,7 +118,14 @@ ui <- function(id) {
           # Main content
           layout_column_wrap(
             width = 1/2,
-            plotlyOutput(ns("gnomad_lof"))
+            plotlyOutput(ns("gnomad_lof"), height = "400px"),
+            textOutput(ns("test_text")),
+            plotlyOutput(ns("gnomad_mis"), height = "400px"),
+            plotlyOutput(ns("shet_rgcme"), height = "400px"),
+            plotlyOutput(ns("shet_posterior"), height = "400px"),
+            plotlyOutput(ns("domino"), height = "400px"),
+            plotlyOutput(ns("scones"), height = "400px"),
+            plotlyOutput(ns("alpha_missense"), height = "400px")
           )
         ),
       ),
@@ -159,9 +167,15 @@ server <- function(id) {
     sidebar_input_sequencing_violinplots <- visuals_violinplots_sidebar$server("sidebar_data_sequencing")
     
     # Get gene list data and meta data
-    gene_list_data <- import_rda_data$dpc_gene_list_data()
+    #gene_list_data <- import_rda_data$dpc_gene_list_data()
+    gene_list_data <- import_rda_data$morphic_gene_list_data()
     meta_data <- import_rda_data$visuals_data()
     constraint_metrics_plot_data <- import_rda_data$constraint_metrics()
+    
+    # Get sidebar options for sequencing plots
+    # sidebar_input_sequencing_violinplots$show_all_data_points() <- reactive({
+    #   sidebar_input_sequencing_violinplots$show_all_data_points()
+    # })
     
     output$impc_chart <- renderPlotly({
       req(!is.null(sidebar_input_impc_barchart()))
@@ -227,6 +241,11 @@ server <- function(id) {
     }) %>%
       bindCache(sidebar_input_omim_barchart())
     
+    toggle_data_points <- reactive({
+      sidebar_input_sequencing_violinplots$show_all_data_points()
+    })
+    
+    # Sequencing metrics ----
     output$gnomad_lof <- renderPlotly({
       req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
       data <- constraint_metrics_plot_data
@@ -235,11 +254,127 @@ server <- function(id) {
       plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
       genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
 
-      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight)
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, 0.35, toggle_data_points())
       
     }) %>%
-      bindCache(c(sidebar_input_sequencing_violinplots$selected_dpc(), sidebar_input_sequencing_violinplots$gene_search_input()))
- 
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+          )
+        )
+    
+    output$gnomad_mis <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'mis_oe'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, NULL, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    output$shet_rgcme <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'mean'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, 0.075, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    output$shet_posterior <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'post_mean'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, 0.1, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    output$domino <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'DOMINO'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, NULL, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    output$scones <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'SCoNeS'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, NULL, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    output$alpha_missense <- renderPlotly({
+      req(!is.null(sidebar_input_sequencing_violinplots$selected_dpc()))
+      data <- constraint_metrics_plot_data
+      column <- 'mean_am_pathogenicity'
+      gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_sequencing_violinplots$selected_dpc(), gene_list_data)
+      plot_data <- generate_visuals$getViolinPlotData(data, column, gene_lists)
+      genes_to_highlight <- unlist(strsplit(sidebar_input_sequencing_violinplots$gene_search_input(), ","))
+
+      generate_visuals$renderViolinPlot(plot_data, column, genes_to_highlight, NULL, toggle_data_points())
+
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_sequencing_violinplots$selected_dpc(), 
+          sidebar_input_sequencing_violinplots$gene_search_input(), 
+          toggle_data_points()
+        )
+      )
+    
+    # Cell line metrics ----
     
 
   })
