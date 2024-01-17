@@ -5,6 +5,10 @@
   0 6px 20px 0 rgba(0, 0, 0, 0.2);
 }
 
+@mixin shadow-sidebar {
+  box-shadow: 4px 0 8px 0 rgba(0, 0, 0, 0.2);
+}
+
 /* Table border */
 .dataTables_scroll {
   @include shadow;
@@ -45,6 +49,42 @@
   bottom: 0;
   right: 0;
 }
+
+/* Give sidebar shadow */
+.sidebar {
+  @include shadow-sidebar;
+}
+
+/* For non-fill elements */
+@mixin fill-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.shiny-html-output.shiny-bound-output {
+  @include fill-container;
+}
+  
+.upsetjs.html-widget.html-widget-static-bound {
+  @include fill-container;
+}
+
+.root-upset-owbx37vh6 {
+  @include fill-container;
+}
+
+/*
+.shiny-html-output.shiny-bound-output {
+  width: 100% !important;
+  height: 100% !important;
+}
+*/
+
+/* Add shadows to plotly plots 
+.plot-container.plotly {
+    @include shadow;
+}
+*/
 
 /*  Center dropdown text 
 .form-group.shiny-input-container {

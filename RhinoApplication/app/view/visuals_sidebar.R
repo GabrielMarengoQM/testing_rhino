@@ -23,7 +23,7 @@ ui <- function(id) {
     pickerInput(
       ns("select_dpcs_vis"),
       "Select Data Production Center",
-      c("JAX", "MSK", "NWU", "UCSF"),
+      c("JAX", "MSK", "NWU", "UCSF", "All protein coding genes"),
       multiple = TRUE,
       selected = "JAX",
       options = pickerOptions(
@@ -39,17 +39,6 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
-    output$current_visuals_view <- renderUI({
-      header <- 'Current view: '
-      dpc_selected <- input$select_dpcs_vis
-      body <- dpc_selected
-      body <- paste(body, collapse = ", ")
-      
-      HTML(glue("<p>{header} <br> {body}</p>"))
-    })
-    
-    output$select_visuals_view <- renderText('Select Gene list:')
     
     visuals_sidebar_data <- reactive(input$select_dpcs_vis)
   })

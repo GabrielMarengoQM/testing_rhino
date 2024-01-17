@@ -12,7 +12,7 @@ morphic_gene_list_data <- function() {
 #' @export
 meta_data_table_data <- function() {
   #genesMetaDataDf_data <- readRDS('../../../rda/all_genes_with_anot_jan2.rda')
-  genesMetaDataDf_data <- readRDS('/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/all_genes_with_anot_jan2.rda')
+  genesMetaDataDf_data <- readRDS('/Users/gabrielm/Desktop/Rstuff/essentialgenes_rshiny_rhino_test/rda/all_genes_with_anot_jan16.rda')
 }
 
 #' @export

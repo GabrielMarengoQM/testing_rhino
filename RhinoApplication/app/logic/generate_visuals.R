@@ -3,7 +3,8 @@ box::use(
   dplyr[...],
   #plotly[plot_ly, layout, add_trace],
   plotly[...],
-  stats[...]
+  stats[...],
+  upsetjs[...]
 )
 
 # Rda data
@@ -581,4 +582,64 @@ renderViolinPlot <- function(data, column, genes_to_highlight, threshold_value, 
   return(violin_plot)
 }
 
+# Panther plots
+# Issue: can't use column in the ~reorder 
+#' @export
+getPantherPlots <- function(data, gene_lists) {
 
+  all_data_list <- list()
+  
+  for (i in gene_lists) {
+    gene_list_name <- i[[2]]
+    all_data_list <- append(
+      all_data_list, 
+      list(
+        list(  
+          data %>%
+            dplyr::filter(!is.na(class_term)) %>%
+            dplyr::filter(gene_symbol %in% i[[1]]) %>%
+            dplyr::select(class_term) %>%
+            dplyr::group_by(class_term) %>%
+            dplyr::tally() %>%
+            dplyr::arrange(desc(n)) %>%
+            dplyr::slice_head(n = 10),
+          gene_list_name
+          )
+        )
+      )
+  }
+  
+  plot_list <- list()
+  for (i in all_data_list) {
+    p <- i[[1]] %>%
+      plot_ly(
+        type = 'bar',
+        x = ~reorder(class_term, n),
+        y = ~n,
+        name = i[[2]]
+      ) 
+    
+    plot_list <- append(plot_list, list(p))
+  }
+  
+  subplots <- subplot(plot_list) %>%
+    layout(
+      title = 'Top 10 Protein Class Terms'
+    )
+  
+  return(subplots)
+}
+
+#' @export
+generateUpsetR <- function(gene_lists) {
+  
+  input <- list()
+  
+  for (i in gene_lists) {
+    input[[i[[2]]]] <- i[[1]]
+  }
+  
+  upsetjs() %>%
+    fromList(input) %>%
+    interactiveChart()
+}
