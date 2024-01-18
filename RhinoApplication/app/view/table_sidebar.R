@@ -33,7 +33,6 @@ ui <- function(id) {
       ),
       inline = FALSE
     ),
-    hr(),
     pickerInput(
       ns("show_cols"),
       "Select meta data to display:",

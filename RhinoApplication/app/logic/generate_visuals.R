@@ -30,15 +30,14 @@ getDataFromUserSelect <- function(selected_data, data) {
 # Mouse model data functions ----
 # Takes gene list, returns dataframe for plot
 #' @export
-getImpcPlotData <- function(gene_lists, data) {
+generateImpcBarchart <- function(gene_lists, data) {
   
   main.annotated.data.frame <- data
   
   mouse_data_list <- list()
   for (i in gene_lists) {
-    i <- i[[1]] # Get Data
     
-    impc_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('mgi_id', 'impc_viability')]
+    impc_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i[[1]], c('mgi_id', 'impc_viability')]
     impc_plot_data <- impc_data %>%
       dplyr::filter(mgi_id != "NA") %>%
       dplyr::filter(impc_viability != "NA") %>%
@@ -48,7 +47,8 @@ getImpcPlotData <- function(gene_lists, data) {
       dplyr::tally() %>%
       dplyr::mutate(impc_viability_3 = factor(impc_viability_2,
                                               levels = c("lethal","subviable","viable"))) %>%
-      dplyr::mutate(percentage = (n/sum(n)*100))
+      dplyr::mutate(percentage = (n/sum(n)*100)) %>%
+      dplyr::mutate(list_name = i[[2]])
     
     # Remove conflicting rows 
     impc_plot_data <- impc_plot_data[impc_plot_data$impc_viability_2 != "conflicting", ]
@@ -73,73 +73,79 @@ getImpcPlotData <- function(gene_lists, data) {
     mouse_data_list <- c(mouse_data_list, list(impc_plot_data))
   }
   
-  return(mouse_data_list)
+  # Combine data frames vertically
+  combined_df <- bind_rows(mouse_data_list)
+  
+  plot <- plot_ly(combined_df, x = ~impc_viability_3, y = ~percentage, color = ~list_name,
+                  textposition = 'outside', text = ~percentage) %>%
+    layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
+  
+  return(plot)
 }
 
 # Takes impc data frame, create plotly plot
 #' @export
-generateImpcPlot <- function(impc_plot_data) {
-  # conflicted::conflicts_prefer(plotly::layout)
-  x_axis <- c("lethal", "subviable", "viable")
-  data <- impc_plot_data[, c('impc_viability_3', 'percentage')]
-  new_col_names <- c("x_axis", "percentage")
-  colnames(data) <- new_col_names
-  
-  impc_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
-  
-  return(impc_plot)
-}
+#' generateImpcPlot <- function(impc_plot_data) {
+#'   # conflicted::conflicts_prefer(plotly::layout)
+#'   x_axis <- c("lethal", "subviable", "viable")
+#'   data <- impc_plot_data[, c('impc_viability_3', 'percentage')]
+#'   new_col_names <- c("x_axis", "percentage")
+#'   colnames(data) <- new_col_names
+#'   
+#'   impc_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
+#'                        name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
+#'   
+#'   return(impc_plot)
+#' }
+#' 
+#' # Takes gene lists & impc data frames, creates plotly plot with multiple traces
+#' #' @export
+#' generateMultipleTracesImpcPlot <- function(plots, gene_lists_for_plots) {
+#'   percentage_cols <- lapply(plots, function(plot) plot$percentage)
+#'   
+#'   # Bind the percentage column
+#'   df <- data.frame(x_axis = c("lethal", "subviable", "viable"))
+#'   df <- bind_cols(df, !!!percentage_cols)
+#'   # Rename the columns
+#'   list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+#'   
+#'   # Create column names for the dataframe
+#'   col_names <- c("x_axis", list_names)
+#'   
+#'   # Assign column names to your dataframe (replace df with your actual dataframe)
+#'   colnames(df) <- col_names
+#'   # set y_col as first value name for initial plotly obj
+#'   y_col <- names(df)[2] # first value after xaxis column
+#'   y_col
+#'   p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+#'                type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
+#'   p
+#'   # set y_cols2 for rest of value names for traces
+#'   y_cols1<- names(df)[-1]
+#'   y_cols2 <- y_cols1[-1]
+#'   # Add traces
+#'   for (i in y_cols2) {
+#'     text_col <- paste0("text_", i)  # New variable for dynamic text
+#'     df[[text_col]] <- df[[i]]
+#'     
+#'     p <- p %>%
+#'       add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+#'   }
+#'   # Print the resulting plot
+#'   p
+#' }
 
-# Takes gene lists & impc data frames, creates plotly plot with multiple traces
 #' @export
-generateMultipleTracesImpcPlot <- function(plots, gene_lists_for_plots) {
-  percentage_cols <- lapply(plots, function(plot) plot$percentage)
-  
-  # Bind the percentage column
-  df <- data.frame(x_axis = c("lethal", "subviable", "viable"))
-  df <- bind_cols(df, !!!percentage_cols)
-  # Rename the columns
-  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-  
-  # Create column names for the dataframe
-  col_names <- c("x_axis", list_names)
-  
-  # Assign column names to your dataframe (replace df with your actual dataframe)
-  colnames(df) <- col_names
-  # set y_col as first value name for initial plotly obj
-  y_col <- names(df)[2] # first value after xaxis column
-  y_col
-  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
-               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'IMPC preweaning viability assessment'))
-  p
-  # set y_cols2 for rest of value names for traces
-  y_cols1<- names(df)[-1]
-  y_cols2 <- y_cols1[-1]
-  # Add traces
-  for (i in y_cols2) {
-    text_col <- paste0("text_", i)  # New variable for dynamic text
-    df[[text_col]] <- df[[i]]
-    
-    p <- p %>%
-      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
-  }
-  # Print the resulting plot
-  p
-}
-
-#' @export
-getMgiPlotData <- function(gene_lists, data) {
+generateMgiBarchart <- function(gene_lists, data) {
   
   main.annotated.data.frame <- data
   
   mouse_data_list <- list()
   for (i in gene_lists) {
-    i <- i[[1]] # Get Data
-    
-    mgi_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('mgi_id', 'mgi_viability')]
+
+    mgi_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i[[1]], c('mgi_id', 'mgi_viability')]
     mgi_plot_data <- mgi_data %>%
       dplyr::filter(mgi_id != "NA") %>%
       dplyr::filter(mgi_viability != "NA") %>%
@@ -149,7 +155,8 @@ getMgiPlotData <- function(gene_lists, data) {
       dplyr::tally() %>%
       dplyr::mutate(mgi_viability_3 = factor(mgi_viability_2,
                                               levels = c("lethal", "viable"))) %>%
-      dplyr::mutate(percentage = (n/sum(n)*100))
+      dplyr::mutate(percentage = (n/sum(n)*100)) %>%
+      dplyr::mutate(list_name = i[[2]])
     
     # Remove conflicting rows 
     mgi_plot_data <- mgi_plot_data[mgi_plot_data$mgi_viability_2 != "conflicting", ]
@@ -174,75 +181,81 @@ getMgiPlotData <- function(gene_lists, data) {
     mouse_data_list <- c(mouse_data_list, list(mgi_plot_data))
   }
   
-  return(mouse_data_list)
+  # Combine data frames vertically
+  combined_df <- bind_rows(mouse_data_list)
+  
+  plot <- plot_ly(combined_df, x = ~mgi_viability_3, y = ~percentage, color = ~list_name,
+                  textposition = 'outside', text = ~percentage) %>%
+    layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'MGI preweaning viability assessment'))
+  
+  return(plot)
 }
 
-# Takes impc data frame, create plotly plot
-#' @export
-generateMgiPlot <- function(mgi_plot_data) {
-  # conflicted::conflicts_prefer(plotly::layout)
-  x_axis <- c("lethal", "viable")
-  data <- mgi_plot_data[, c('mgi_viability_3', 'percentage')]
-  new_col_names <- c("x_axis", "percentage")
-  colnames(data) <- new_col_names
-  
-  mgi_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'mgi preweaning viability assessment'))
-  
-  return(mgi_plot)
-}
-
-# Takes gene lists & mgi data frames, creates plotly plot with multiple traces
-#' @export
-generateMultipleTracesMgiPlot <- function(plots, gene_lists_for_plots) {
-  percentage_cols <- lapply(plots, function(plot) plot$percentage)
-  
-  # Bind the percentage column
-  df <- data.frame(x_axis = c("lethal", "viable"))
-  df <- bind_cols(df, !!!percentage_cols)
-  # Rename the columns
-  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-  
-  # Create column names for the dataframe
-  col_names <- c("x_axis", list_names)
-  
-  # Assign column names to your dataframe (replace df with your actual dataframe)
-  colnames(df) <- col_names
-  # set y_col as first value name for initial plotly obj
-  y_col <- names(df)[2] # first value after xaxis column
-  y_col
-  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
-               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'MGI preweaning viability assessment'))
-  p
-  # set y_cols2 for rest of value names for traces
-  y_cols1<- names(df)[-1]
-  y_cols2 <- y_cols1[-1]
-  # Add traces
-  for (i in y_cols2) {
-    text_col <- paste0("text_", i)  # New variable for dynamic text
-    df[[text_col]] <- df[[i]]
-    
-    p <- p %>%
-      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
-  }
-  # Print the resulting plot
-  p
-}
+#' # Takes impc data frame, create plotly plot
+#' #' @export
+#' generateMgiPlot <- function(mgi_plot_data) {
+#'   # conflicted::conflicts_prefer(plotly::layout)
+#'   x_axis <- c("lethal", "viable")
+#'   data <- mgi_plot_data[, c('mgi_viability_3', 'percentage')]
+#'   new_col_names <- c("x_axis", "percentage")
+#'   colnames(data) <- new_col_names
+#'   
+#'   mgi_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
+#'                        name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'mgi preweaning viability assessment'))
+#'   
+#'   return(mgi_plot)
+#' }
+#' 
+#' # Takes gene lists & mgi data frames, creates plotly plot with multiple traces
+#' #' @export
+#' generateMultipleTracesMgiPlot <- function(plots, gene_lists_for_plots) {
+#'   percentage_cols <- lapply(plots, function(plot) plot$percentage)
+#'   
+#'   # Bind the percentage column
+#'   df <- data.frame(x_axis = c("lethal", "viable"))
+#'   df <- bind_cols(df, !!!percentage_cols)
+#'   # Rename the columns
+#'   list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+#'   
+#'   # Create column names for the dataframe
+#'   col_names <- c("x_axis", list_names)
+#'   
+#'   # Assign column names to your dataframe (replace df with your actual dataframe)
+#'   colnames(df) <- col_names
+#'   # set y_col as first value name for initial plotly obj
+#'   y_col <- names(df)[2] # first value after xaxis column
+#'   y_col
+#'   p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+#'                type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'MGI preweaning viability assessment'))
+#'   p
+#'   # set y_cols2 for rest of value names for traces
+#'   y_cols1<- names(df)[-1]
+#'   y_cols2 <- y_cols1[-1]
+#'   # Add traces
+#'   for (i in y_cols2) {
+#'     text_col <- paste0("text_", i)  # New variable for dynamic text
+#'     df[[text_col]] <- df[[i]]
+#'     
+#'     p <- p %>%
+#'       add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+#'   }
+#'   # Print the resulting plot
+#'   p
+#' }
 
 
 # disease plots ----
 #' @export
-getHasOmimPlotData <- function(gene_lists, data) {
+generateHasOmimPlot <- function(gene_lists, data) {
   
   main.annotated.data.frame <- data
   
   omim_data_list <- list()
   for (i in gene_lists) {
-    i <- i[[1]] # Get Data
-    
-    omim_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('hgnc_id', 'omim_phenotype')]
+
+    omim_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i[[1]], c('hgnc_id', 'omim_phenotype')]
     
     omim_plot_data <- omim_data %>%
       mutate(has_omim_phenotype = if_else(!is.na(omim_phenotype), "yes", "no"))
@@ -250,7 +263,8 @@ getHasOmimPlotData <- function(gene_lists, data) {
     omim_summary_data <- omim_plot_data %>%
       group_by(has_omim_phenotype) %>%
       summarize(count = n()) %>%
-      mutate(percentage = (count / sum(count)) * 100)
+      mutate(percentage = (count / sum(count)) * 100) %>%
+      dplyr::mutate(list_name = i[[2]])
     
     # Round the numeric columns to 3 decimal places
     omim_summary_data <- omim_summary_data %>%
@@ -272,78 +286,85 @@ getHasOmimPlotData <- function(gene_lists, data) {
     omim_data_list <- c(omim_data_list, list(omim_summary_data))
   }
 
-  return(omim_data_list)
+  # Combine data frames vertically
+  combined_df <- bind_rows(omim_data_list)
+  
+  plot <- plot_ly(combined_df, x = ~has_omim_phenotype, y = ~percentage, color = ~list_name,
+                  textposition = 'outside', text = ~percentage) %>%
+    layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
+  
+  return(plot)
 }
 
 #' @export
-generateHasOmimPlot <- function(omim_summary_data) {
-  # conflicted::conflicts_prefer(plotly::layout)
-  x_axis <- c("yes", "no")
-  data <- omim_summary_data[, c('has_omim_phenotype', 'percentage')]
-  new_col_names <- c("x_axis", "percentage")
-  colnames(data) <- new_col_names
-  
-  omim_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                       name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
-  
-  return(omim_plot)
-}
+#' generateHasOmimPlot <- function(omim_summary_data) {
+#'   # conflicted::conflicts_prefer(plotly::layout)
+#'   x_axis <- c("yes", "no")
+#'   data <- omim_summary_data[, c('has_omim_phenotype', 'percentage')]
+#'   new_col_names <- c("x_axis", "percentage")
+#'   colnames(data) <- new_col_names
+#'   
+#'   omim_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
+#'                        name = "EXAMPLE", textposition = 'outside', text = ~percentage) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
+#'   
+#'   return(omim_plot)
+#' }
+#' 
+#' #' @export
+#' generateMultipleTracesHasOmimPlot <- function(plots, gene_lists_for_plots) {
+#'   percentage_cols <- lapply(plots, function(plot) plot$percentage)
+#'   
+#'   # Bind the percentage column
+#'   df <- data.frame(x_axis = c("yes", "no"))
+#'   df <- bind_cols(df, !!!percentage_cols)
+#'   # Rename the columns
+#'   list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+#'   
+#'   # Create column names for the dataframe
+#'   col_names <- c("x_axis", list_names)
+#'   
+#'   # Assign column names to your dataframe (replace df with your actual dataframe)
+#'   colnames(df) <- col_names
+#'   # set y_col as first value name for initial plotly obj
+#'   y_col <- names(df)[2] # first value after xaxis column
+#'   y_col
+#'   p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+#'                type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
+#'   p
+#'   # set y_cols2 for rest of value names for traces
+#'   y_cols1<- names(df)[-1]
+#'   y_cols2 <- y_cols1[-1]
+#'   # Add traces
+#'   for (i in y_cols2) {
+#'     text_col <- paste0("text_", i)  # New variable for dynamic text
+#'     df[[text_col]] <- df[[i]]
+#'     
+#'     p <- p %>%
+#'       add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+#'   }
+#'   # Print the resulting plot
+#'   p
+#' }
 
 #' @export
-generateMultipleTracesHasOmimPlot <- function(plots, gene_lists_for_plots) {
-  percentage_cols <- lapply(plots, function(plot) plot$percentage)
-  
-  # Bind the percentage column
-  df <- data.frame(x_axis = c("yes", "no"))
-  df <- bind_cols(df, !!!percentage_cols)
-  # Rename the columns
-  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-  
-  # Create column names for the dataframe
-  col_names <- c("x_axis", list_names)
-  
-  # Assign column names to your dataframe (replace df with your actual dataframe)
-  colnames(df) <- col_names
-  # set y_col as first value name for initial plotly obj
-  y_col <- names(df)[2] # first value after xaxis column
-  y_col
-  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
-               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Mendelian disease association (OMIM)'))
-  p
-  # set y_cols2 for rest of value names for traces
-  y_cols1<- names(df)[-1]
-  y_cols2 <- y_cols1[-1]
-  # Add traces
-  for (i in y_cols2) {
-    text_col <- paste0("text_", i)  # New variable for dynamic text
-    df[[text_col]] <- df[[i]]
-    
-    p <- p %>%
-      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
-  }
-  # Print the resulting plot
-  p
-}
-
-#' @export
-getOmimLethalityPlotData <- function(gene_lists, data) {
+generateOmimLethalityPlot <- function(gene_lists, data) {
   
   main.annotated.data.frame <- data
   
   omim_data_list <- list()
   for (i in gene_lists) {
-    i <- i[[1]] # Get Data
-    
-    omim_lethality_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i, c('hgnc_id', 'omim_gene_lethality')]
+
+    omim_lethality_data <- main.annotated.data.frame[main.annotated.data.frame$gene_symbol %in% i[[1]], c('hgnc_id', 'omim_gene_lethality')]
     
     omim_summary_data <- omim_lethality_data %>%
       dplyr::filter(!is.na(omim_gene_lethality)) %>%
       dplyr::filter(omim_gene_lethality %in% c("lethal", "nonlethal")) %>%
       dplyr::group_by(omim_gene_lethality) %>%
       dplyr::summarize(count = n()) %>%
-      dplyr::mutate(percentage = (count / sum(count)) * 100)
+      dplyr::mutate(percentage = (count / sum(count)) * 100) %>%
+      dplyr::mutate(list_name = i[[2]])
     
     # Round the numeric columns to 3 decimal places
     omim_lethality_summary_data <- omim_summary_data %>%
@@ -364,60 +385,67 @@ getOmimLethalityPlotData <- function(gene_lists, data) {
     
     omim_data_list <- c(omim_data_list, list(omim_lethality_summary_data))
   }
-  return(omim_data_list)
+  # Combine data frames vertically
+  combined_df <- bind_rows(omim_data_list)
+  
+  plot <- plot_ly(combined_df, x = ~omim_gene_lethality, y = ~percentage, color = ~list_name,
+                  textposition = 'outside', text = ~percentage) %>%
+    layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
+  
+  return(plot)
 }
 
-#' @export
-generateOmimLethalityPlot <- function(omim_lethality_summary_data) {
-  # conflicted::conflicts_prefer(plotly::layout)
-  x_axis <- c("lethal", "nonlethal")
-  data <- omim_lethality_summary_data[, c('omim_gene_lethality', 'percentage')]
-  new_col_names <- c("x_axis", "percentage")
-  colnames(data) <- new_col_names
-  
-  omim_lethality_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
-                                 name = "Example", textposition = 'outside', text = ~percentage) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
-  
-  return(omim_lethality_plot)
-}
-
-#' @export
-generateMultipleTracesOmimLethalityPlot <- function(plots, gene_lists_for_plots) {
-  percentage_cols <- lapply(plots, function(plot) plot$percentage)
-  
-  # Bind the percentage column
-  df <- data.frame(x_axis = c("lethal", "nonlethal"))
-  df <- bind_cols(df, !!!percentage_cols)
-  # Rename the columns
-  list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
-  
-  # Create column names for the dataframe
-  col_names <- c("x_axis", list_names)
-  
-  # Assign column names to your dataframe (replace df with your actual dataframe)
-  colnames(df) <- col_names
-  # set y_col as first value name for initial plotly obj
-  y_col <- names(df)[2] # first value after xaxis column
-  y_col
-  p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
-               type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
-    plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
-  p
-  # set y_cols2 for rest of value names for traces
-  y_cols1<- names(df)[-1]
-  y_cols2 <- y_cols1[-1]
-  # Add traces
-  for (i in y_cols2) {
-    text_col <- paste0("text_", i)  # New variable for dynamic text
-    df[[text_col]] <- df[[i]]
-    
-    p <- p %>%
-      add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
-  }
-  # Print the resulting plot
-  p
-}
+#' #' @export
+#' generateOmimLethalityPlot <- function(omim_lethality_summary_data) {
+#'   # conflicted::conflicts_prefer(plotly::layout)
+#'   x_axis <- c("lethal", "nonlethal")
+#'   data <- omim_lethality_summary_data[, c('omim_gene_lethality', 'percentage')]
+#'   new_col_names <- c("x_axis", "percentage")
+#'   colnames(data) <- new_col_names
+#'   
+#'   omim_lethality_plot <- plot_ly(data, x = ~x_axis, y = ~percentage, type = 'bar',
+#'                                  name = "Example", textposition = 'outside', text = ~percentage) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
+#'   
+#'   return(omim_lethality_plot)
+#' }
+#' 
+#' #' @export
+#' generateMultipleTracesOmimLethalityPlot <- function(plots, gene_lists_for_plots) {
+#'   percentage_cols <- lapply(plots, function(plot) plot$percentage)
+#'   
+#'   # Bind the percentage column
+#'   df <- data.frame(x_axis = c("lethal", "nonlethal"))
+#'   df <- bind_cols(df, !!!percentage_cols)
+#'   # Rename the columns
+#'   list_names <- sapply(gene_lists_for_plots, function(x) x[[2]])
+#'   
+#'   # Create column names for the dataframe
+#'   col_names <- c("x_axis", list_names)
+#'   
+#'   # Assign column names to your dataframe (replace df with your actual dataframe)
+#'   colnames(df) <- col_names
+#'   # set y_col as first value name for initial plotly obj
+#'   y_col <- names(df)[2] # first value after xaxis column
+#'   y_col
+#'   p <- plot_ly(df, x = ~x_axis, y = as.formula(paste0("~", y_col)),
+#'                type = 'bar', name = y_col, textposition = 'outside', text = ~get(y_col)) %>%
+#'     plotly::layout(yaxis = list(title = '% of genes'), xaxis = list(title = 'Lethal Phenotypes (OMIM)'))
+#'   p
+#'   # set y_cols2 for rest of value names for traces
+#'   y_cols1<- names(df)[-1]
+#'   y_cols2 <- y_cols1[-1]
+#'   # Add traces
+#'   for (i in y_cols2) {
+#'     text_col <- paste0("text_", i)  # New variable for dynamic text
+#'     df[[text_col]] <- df[[i]]
+#'     
+#'     p <- p %>%
+#'       add_trace(data = df, y = as.formula(paste0("~", i)), name = i, text = as.formula(paste0("~", text_col)))
+#'   }
+#'   # Print the resulting plot
+#'   p
+#' }
 
 #' #' @export
 #' constraintMetricsPlots <- function(gene_lists_for_plots, meta_data, metric_col_name, x_axis_text) {
@@ -643,3 +671,9 @@ generateUpsetR <- function(gene_lists) {
     fromList(input) %>%
     interactiveChart()
 }
+
+
+
+
+
+

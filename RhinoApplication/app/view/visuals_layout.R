@@ -220,17 +220,10 @@ server <- function(id) {
     
     output$impc_chart <- renderPlotly({
       req(!is.null(sidebar_input_impc_barchart()))
-      
-      # Generate plot data frames
+    
       gene_lists_for_plots <- generate_visuals$getDataFromUserSelect(sidebar_input_impc_barchart(), gene_list_data)
-      plots <- generate_visuals$getImpcPlotData(gene_lists_for_plots, meta_data)
+      generate_visuals$generateImpcBarchart(gene_lists_for_plots, meta_data)
       
-      # Generate bar charts
-      if (length(plots) == 1) {
-        generate_visuals$generateImpcPlot(plots[[1]])
-      } else {
-        generate_visuals$generateMultipleTracesImpcPlot(plots, gene_lists_for_plots)
-      }
     }) %>%
       bindCache(sidebar_input_impc_barchart())
     
@@ -239,14 +232,8 @@ server <- function(id) {
       
       # Generate plot data frames
       gene_lists_for_plots <- generate_visuals$getDataFromUserSelect(sidebar_input_mgi_barchart(), gene_list_data)
-      plots <- generate_visuals$getMgiPlotData(gene_lists_for_plots, meta_data)
+      generate_visuals$generateMgiBarchart(gene_lists_for_plots, meta_data)
       
-      # Generate bar charts
-      if (length(plots) == 1) {
-        generate_visuals$generateMgiPlot(plots[[1]])
-      } else {
-        generate_visuals$generateMultipleTracesMgiPlot(plots, gene_lists_for_plots)
-      }
     }) %>%
       bindCache(sidebar_input_mgi_barchart())
     
@@ -255,14 +242,8 @@ server <- function(id) {
       
       # Generate plot data frames
       gene_lists_for_plots <- generate_visuals$getDataFromUserSelect(sidebar_input_omim_barchart(), gene_list_data)
-      plots_data <- generate_visuals$getHasOmimPlotData(gene_lists_for_plots, meta_data)
-
-      # Generate bar charts
-      if (length(plots_data) == 1) {
-        generate_visuals$generateHasOmimPlot(plots_data[[1]])
-      } else {
-        generate_visuals$generateMultipleTracesHasOmimPlot(plots_data, gene_lists_for_plots)
-      }
+      generate_visuals$generateHasOmimPlot(gene_lists_for_plots, meta_data)
+      
     }) %>%
       bindCache(sidebar_input_omim_barchart())
     
@@ -271,14 +252,8 @@ server <- function(id) {
       
       # Generate plot data frames
       gene_lists_for_plots <- generate_visuals$getDataFromUserSelect(sidebar_input_omim_barchart(), gene_list_data)
-      plots_data <- generate_visuals$getOmimLethalityPlotData(gene_lists_for_plots, meta_data)
-
-      # Generate bar charts
-      if (length(plots_data) == 1) {
-        generate_visuals$generateOmimLethalityPlot(plots_data[[1]])
-      } else {
-        generate_visuals$generateMultipleTracesOmimLethalityPlot(plots_data, gene_lists_for_plots)
-      }
+      generate_visuals$generateOmimLethalityPlot(gene_lists_for_plots, meta_data)
+      
     }) %>%
       bindCache(sidebar_input_omim_barchart())
     
@@ -514,7 +489,10 @@ server <- function(id) {
     output$upsetPlot <- renderUI({
       gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_upset(), gene_list_data)
       htmltools::browsable(generate_visuals$generateUpsetR(gene_lists))
-    })
+    }) %>%
+      bindCache(
+        sidebar_input_upset()
+      )
     
    
 
