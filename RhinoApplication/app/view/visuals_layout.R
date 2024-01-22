@@ -7,12 +7,13 @@ box::use(
   glue[glue],
   plotly[...],
   dplyr[...],
-  stats[...]
+  stats[...],
+  DT[...]
 )
 
 # Modules
 box::use(
-  app/view[visuals_sidebar, visuals_violinplots_sidebar],
+  app/view[visuals_sidebar, visuals_violinplots_sidebar, gene_ontology_sidebar, reactome_sidebar],
   app/logic/generate_visuals
 )
 
@@ -171,7 +172,7 @@ ui <- function(id) {
       ),
       nav_panel(
         shiny::icon("circle-info"),
-        markdown("Learn more about [htmlwidgets](http://www.htmlwidgets.org/)")
+        markdown("Learn more about [PANTHERTdb](https://www.pantherdb.org/about.jsp)")
       )
     ),
     navset_card_tab(
@@ -190,10 +191,53 @@ ui <- function(id) {
           # Main content
           htmlOutput(ns("upsetPlot"))      
         ),
+      )
+    ),
+    navset_card_tab(
+      height = 450,
+      full_screen = TRUE,
+      title = "Enrichment and Semantic Similarity Analysis",
+      nav_panel(
+        "Gene Ontology",
+        page_sidebar(
+          fillable = FALSE,
+          # Sidebar
+          sidebar = sidebar(
+            width = "340px",
+            open = c('open'),
+            # NEW SIDEBAR WITHOUT ALL PROTEIN CODING GENES?
+            gene_ontology_sidebar$ui(ns("sidebar_data_go"))
+          ),
+          # Main content
+
+          h5("Semantic Similarity Analysis of Enriched Terms"),
+          plotlyOutput(ns("go_semantic_similarity_plot"), height = "500px"),
+          h5("Top 10 Enriched Terms"),
+          DTOutput(ns("top_enriched_go_terms"))
+          
+        ),
+      ),
+      nav_panel(
+        "Reactome",
+        page_sidebar(
+          fillable = FALSE,
+          # Sidebar
+          sidebar = sidebar(
+            width = "340px",
+            open = c('open'),
+            reactome_sidebar$ui(ns("sidebar_data_reactome"))
+          ),
+          # Main content
+          layout_column_wrap(
+            width = 1,
+            plotOutput(ns("reactome_enrichment_plot")),
+            DTOutput(ns("top_enriched_reactome_terms"))
+          )
+        ),
       ),
       nav_panel(
         shiny::icon("circle-info"),
-        markdown("Learn more about [htmlwidgets](http://www.htmlwidgets.org/)")
+        markdown("Learn more about [gnomad_lof & gnomad_mis](https://gnomad.broadinstitute.org/downloads#v4-constraint)")
       )
     )
   )
@@ -209,6 +253,8 @@ server <- function(id) {
     sidebar_input_omim_barchart <- visuals_sidebar$server("sidebar_data_omim")
     sidebar_input_panther_classes_barchart <- visuals_sidebar$server("sidebar_data_panther_classes")
     sidebar_input_upset <- visuals_sidebar$server("sidebar_data_upset")
+    sidebar_input_go <- gene_ontology_sidebar$server("sidebar_data_go")
+    sidebar_input_reactome <- reactome_sidebar$server("sidebar_data_reactome")
     sidebar_input_sequencing_violinplots <- visuals_violinplots_sidebar$server("sidebar_data_sequencing")
     sidebar_input_cell_lines_violinplots <- visuals_violinplots_sidebar$server("sidebar_data_cell_lines")
     
@@ -216,7 +262,10 @@ server <- function(id) {
     gene_list_data <- import_rda_data$morphic_gene_list_data()
     meta_data <- import_rda_data$visuals_data()
     constraint_metrics_plot_data <- import_rda_data$constraint_metrics()
-    
+    go_scatter_plots <- import_rda_data$go_scatter_plots()
+    go_top_enriched_terms_tables <- import_rda_data$go_top_enriched_terms_tables()
+    reactome_enrichment_plots <- import_rda_data$reactome_enrichment_plots()
+    reactome_enrichment_tables <- import_rda_data$reactome_enrichment_tables()
     
     output$impc_chart <- renderPlotly({
       req(!is.null(sidebar_input_impc_barchart()))
@@ -487,12 +536,61 @@ server <- function(id) {
       )
     
     output$upsetPlot <- renderUI({
+      req(!is.null(sidebar_input_upset()))
       gene_lists <- generate_visuals$getDataFromUserSelect(sidebar_input_upset(), gene_list_data)
       htmltools::browsable(generate_visuals$generateUpsetR(gene_lists))
     }) %>%
       bindCache(
         sidebar_input_upset()
       )
+    
+    output$go_semantic_similarity_plot <- renderPlotly({
+      plot <- generate_visuals$renderGoScatterPlot(go_scatter_plots, sidebar_input_go$ontology(), sidebar_input_go$dpc_selected(), sidebar_input_go$show_legend())
+      ggplotly(plot)
+    }) %>%
+      bindCache(
+        c(
+          sidebar_input_go$ontology(),
+          sidebar_input_go$dpc_selected(),
+          sidebar_input_go$show_legend()
+        )
+      )
+
+    # How to go about this - only single choice? instead of multiple options
+    output$top_enriched_go_terms <- renderDT({
+      table <- generate_visuals$renderGoTable(go_top_enriched_terms_tables, sidebar_input_go$ontology(), sidebar_input_go$dpc_selected())
+        
+      datatable(
+        table,
+        options = list(
+          searching = FALSE,  # Remove search bar
+          lengthChange = FALSE,  # Remove number of results per page
+          paging = FALSE  # Remove pagination controls
+        )
+      )
+
+    })
+    
+    output$reactome_enrichment_plot <- renderPlot({
+      generate_visuals$renderReactomeEnrichmentPlot(reactome_enrichment_plots, sidebar_input_reactome$dpc_selected_reactome())
+    }) %>%
+      bindCache(
+        sidebar_input_reactome$dpc_selected_reactome()
+      )
+    
+    
+    output$top_enriched_reactome_terms <- renderDT({
+      table <- generate_visuals$renderReactomeTable(reactome_enrichment_tables, sidebar_input_reactome$dpc_selected_reactome())
+      
+      datatable(
+        table,
+        options = list(
+          searching = FALSE,  # Remove search bar
+          lengthChange = FALSE,  # Remove number of results per page
+          paging = FALSE  # Remove pagination controls
+        )
+      )    
+      })
     
    
 

@@ -8,5 +8,7 @@ box::use(
   app/view/visuals_sidebar,
   app/view/visuals_layout,
   app/view/metadata_info_page,
-  app/view/visuals_violinplots_sidebar
+  app/view/visuals_violinplots_sidebar,
+  app/view/gene_ontology_sidebar,
+  app/view/reactome_sidebar
 )
