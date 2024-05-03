@@ -1,14 +1,18 @@
 box::use(
+  fst[read.fst]
+)
+
+box::use(
   app/logic/import_rda_data[...]
 )
 
-list_of_dpcs <- dpc_gene_list_data()
+list_of_dpcs <- morphic_gene_list_data()
 genesMetaDataDf_data <- meta_data_table_data()
 
 #' @export
 getHiddenColumns <- function(selected_sources) {
   source_to_columns <- list(
-    
+
     'DPCs studying Gene' = 0,
     'Gene IDs' = 1:9,
     'Mouse data' = 10:16,
@@ -18,25 +22,37 @@ getHiddenColumns <- function(selected_sources) {
     'Pantherdb protein data' = 54:58,
     'Gene Ontology data' = 59:64,
     'Pathway data' = 63:66
-    
+
   )
-  
+
   hidden_columns <- unlist(lapply(selected_sources, function(source) {
     source_to_columns[[source]]
   }))
-  
+
   all_columns <- 0:66
   visible_columns <- setdiff(all_columns, hidden_columns)
   return(visible_columns)
 }
 
 #' @export
-getGeneListsFromSelect <- function(selected_dpcs) {
-gene_lists <- c()
-for (i in list_of_dpcs) {
-  if (i[[2]] %in% selected_dpcs) {
-    gene_lists <- c(gene_lists, i[[1]])
+getGeneListsFromSelect <- function(selected_dpcs, unify_or_intersect_gene_lists) {
+if (unify_or_intersect_gene_lists == "Union") {
+  print("Union")
+  gene_lists <- c()
+  for (i in list_of_dpcs) {
+    if (i[[2]] %in% selected_dpcs) {
+      gene_lists <- c(gene_lists, i[[1]])
+    }
   }
+} else if (unify_or_intersect_gene_lists == "Intersection") {
+  print("Intersection")
+  gene_lists2 <- list()
+  for (i in list_of_dpcs) {
+    if (i[[2]] %in% selected_dpcs) {
+      gene_lists2 <- append(gene_lists2, list(i[[1]]))
+    }
+  }
+  gene_lists <- Reduce(intersect, gene_lists2)
 }
 return(gene_lists)
 }

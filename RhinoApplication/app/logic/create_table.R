@@ -1,5 +1,6 @@
 box::use(
-  DT[...]
+  DT[...],
+  fst[read.fst]
 )
 
 #' @export
@@ -14,7 +15,15 @@ data_table <- function(table_data, headers, selected_columns) {
     plugins = "ellipsis",
     filter = 'top',
     selection = 'none',
-    extensions = c("Buttons"),
+    # extensions = c("Buttons"),
+#     callback=JS('
+#   $(".btn.btn-secondary.buttons-collection.dropdown-toggle").css({
+#     "background": "#d3d3d3",
+#     "border-color": "#d3d3d3",
+#     "color": "black"
+#   });
+#   return table;
+# '),
     options = list(
       dom = "Bfrtip",
       # Unsure if this actually speeds up the tooltip
@@ -34,43 +43,44 @@ data_table <- function(table_data, headers, selected_columns) {
           visible = FALSE
         )
       ),
-      buttons =  list(
-        list(
-          extend = 'collection',
-          buttons = list(list(extend = "excel", text = "excel", filename = localFileNameDownload,
-                              exportOptions = list(
-                                modifier = list(page = "all", search = "applied"),
-                                orthogonal = "export",
-                                columns = ":visible"
-                              )
-          ),
-          list(extend='csv', 
-               text = "csv",
-               filename = localFileNameDownload,
-               exportOptions = list(
-                 modifier = list(page = "all", search = "applied"),
-                 orthogonal = "export",
-                 columns = ":visible"
-               )
-          ),
-          list(extend='pdf',
-               text = "pdf", 
-               filename= localFileNameDownload,
-               exportOptions = list(
-                 modifier = list(page = "all", search = "applied"),
-                 orthogonal = "export",
-                 columns = ":visible"
-               )
-          )
-          ),
-          text = 'Download current view'
-        )),
+      # buttons =  list(
+      #   list(
+      #     extend = 'collection',
+      #     buttons = list(list(extend = "excel", text = "excel", filename = localFileNameDownload,
+      #                         exportOptions = list(
+      #                           modifier = list(page = "all", search = "applied"),
+      #                           orthogonal = "export",
+      #                           columns = ":visible"
+      #                         )
+      #     ),
+      #     list(extend='csv',
+      #          text = "csv",
+      #          filename = localFileNameDownload,
+      #          exportOptions = list(
+      #            modifier = list(page = "all", search = "applied"),
+      #            orthogonal = "export",
+      #            columns = ":visible"
+      #          )
+      #     ),
+      #     list(extend='pdf',
+      #          text = "pdf",
+      #          filename= localFileNameDownload,
+      #          exportOptions = list(
+      #            modifier = list(page = "all", search = "applied"),
+      #            orthogonal = "export",
+      #            columns = ":visible"
+      #          )
+      #     )
+      #     ),
+      #     text = 'Download current view'
+      #   )
+      #   ),
       pageLength = 100,
       scrollX = TRUE
     )
   )
 }
-  
+
 
 #' @export
 table_headers <- function() {
@@ -94,7 +104,7 @@ table_headers <- function() {
       tr(
         class = 'table_bottom_header',
         th('DPCs'),
-        
+
         th('Gene Symbol', title = 'Symbol used to represent a gene'),
         th('Gene Name', title = 'Official name or description of the gene'),
         th('Alias Symbol', title = 'Alternate symbol(s) or name(s) for the gene'),
@@ -104,7 +114,7 @@ table_headers <- function() {
         th('Ensembl ID', title = 'Gene identifier in the Ensembl database'),
         th('OMIM Gene ID', title = 'Gene identifier in the Online Mendelian Inheritance in Man (OMIM) database'),
         th('MGI ID', title = 'Gene identifier in the Mouse Genome Informatics (MGI) database'),
-        
+
         th('MGI Viability', title = 'Mouse Genome Informatics (MGI) Viability'),
         th('IMPC Viability', title = 'International Mouse Phenotyping Consortium (IMPC) Viability'),
         th('Phenotypes Homo', title = 'Abnormal phenotypes observed in the homozygote knockout (IMPC DR 20.0)'),
@@ -112,7 +122,7 @@ table_headers <- function() {
         th('Phenotypes Hemiz', title = 'Abnormal phenotypes observed in the hemizygote knockout (IMPC DR 20.0)'),
         th('Ortholog relation', title = 'Relation to Orthologous Genes in Humans'),
         th('Ortholog mapping confidence', title = 'Confidence Level of Ortholog Mapping - refer to the Methods section for more information on how this metric was computed'),
-        
+
         th('Phenotype ID', title = 'Phenotype identifier in the Online Mendelian Inheritance in Man (OMIM) database'),
         th('Phenotype', title = 'Online Mendelian Inheritance in Man (OMIM) phenotype'),
         th('Strict mendelian disease', title = 'Indicates if the Phenotype is a Strict Mendelian Disease - refer to the Methods section for more information on how this metric was computed'),
@@ -125,7 +135,7 @@ table_headers <- function() {
         th('Confidence Category', title = 'Category indicating Confidence Level (DDG2P)'),
         th('Allelic Requirement', title = 'Number of copies (alleles) of a particular gene that are necessary for a specific phenotype to manifest (DDG2P)'),
         th('Organ Specificity List', title = 'List of Organs Specific to the Phenotype (DDG2P)'),
-        
+
         th('DepMap Mean Gene Effect Score', title = 'Mean Gene Effect Score in DepMap'),
         th('DepMap percentage essential (< -0.5 GES)', title = 'Percentage of Essential Genes with Mean Gene Effect Score < -0.5 in DepMap - refer to the Methods section for more information on how this metric was computed'),
         th('DepMap threshold flag', title = 'Flag indicating Threshold in DepMap - refer to the Methods section for more information on how this value was attained'),
@@ -133,7 +143,7 @@ table_headers <- function() {
         th('MEF FDR', title = 'False Discovery Rate'),
         th('Laminin Bayes Factor', title = 'Bayes factor (BF) score, a confidence measure of whether a gene is required for fitness in a pooled CRISPR screen. Derived from loss-of-function screens in an inducible Cas9 H1 hPSC line cultured on laminin'),
         th('Laminin FDR', title = 'False Discovery Rate'),
-        
+
         th('Transcript', title = 'Mane Gene Transcript Identifier provided by gnomAD v4'),
         th('Transcript type', title = 'Type of Gene Transcript - refer to the Methods section for more information on how this value was attained'),
         th('OE LOF', title = 'Observed over Expected Loss of Function Score'),
@@ -159,20 +169,20 @@ table_headers <- function() {
 	th('Constraint Metrics: DOMINO', title = 'DOMINO score - likelihood for a gene to harbor dominant changes'),
 	th('Constraint Metrics: SCoNeS', title = 'SCoNeS score - likelihood for a gene to underlie an AD or AR disease (score > 0.75 gene predicted AR, score < 0.25 gene predicted AD)'),
 	th('Mean AM Pathogenicity', title = 'Mean Pathogenicity Score according to the 2023 AlphaMissense model'),
-	
+
 	th('PANTHER Class ID', title = 'Identifier for PANTHER Class'),
 	th('PANTHER Class Term', title = 'Term for PANTHER Class'),
 	th('PANTHER Family ID', title = 'Identifier for PANTHER Family'),
 	th('PANTHER Family Term', title = 'Term for PANTHER Family'),
 	th('PANTHER Subfamily Term', title = 'Term for PANTHER Subfamily'),
-	
+
 	th('GO IDs: Biological Process', title = 'Gene Ontology IDs for Biological Process'),
 	th('GO Terms: Biological Process', title = 'Gene Ontology Terms for Biological Process'),
 	th('GO IDs: Molecular Function', title = 'Gene Ontology IDs for Molecular Function'),
 	th('GO Terms: Molecular Function', title = 'Gene Ontology Terms for Molecular Function'),
 	th('GO IDs: Cellular Component', title = 'Gene Ontology IDs for Cellular Component'),
 	th('GO Terms: Cellular Component', title = 'Gene Ontology Terms for Cellular Component'),
-	
+
 	th('Reactome Pathway ID', title = 'Identifier for Reactome Pathway'),
 	th('Reactome Pathway', title = 'Reactome Pathway')
       )

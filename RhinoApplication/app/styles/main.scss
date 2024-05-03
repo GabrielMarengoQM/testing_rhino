@@ -16,26 +16,47 @@
 
 /* Enable fixed header */
 .dataTables_scrollBody {
-  overflow: auto !important; 
+  overflow: auto !important;
 }
 
 /* Position download, filter, page info and number divs */
 .dataTables_wrapper.dt-bootstrap5.no-footer {
   position: relative;
-  padding-top: 50px; 
-  padding-bottom: 50px; 
+  padding-top: 50px;
+  padding-bottom: 50px;
 }
 
 .dt-buttons.btn-group.flex-wrap {
   position: absolute;
   top: 0;
   left: 0;
+  background-color: #d3d3d3 !important;
+  border-bottom-color: #d3d3d3 !important;
+  border-left-color: #d3d3d3 !important;
+  border-right-color: #d3d3d3 !important;
+  border-top-color: #d3d3d3 !important;
 }
 
 .dataTables_filter {
   position: absolute;
   top: 0;
   right: 0;
+}
+
+.btn.btn-secondary.buttons-collection.dropdown-toggle {
+  background-color: #d3d3d3 !important;
+  border-bottom-color: #d3d3d3 !important;
+  border-left-color: #d3d3d3 !important;
+  border-right-color: #d3d3d3 !important;
+  border-top-color: #d3d3d3 !important;
+}
+
+.btn-group {
+  background-color: #d3d3d3 !important;
+  border-bottom-color: #d3d3d3 !important;
+  border-left-color: #d3d3d3 !important;
+  border-right-color: #d3d3d3 !important;
+  border-top-color: #d3d3d3 !important;
 }
 
 .dataTables_info {
@@ -64,7 +85,7 @@
 .shiny-html-output.shiny-bound-output {
   @include fill-container;
 }
-  
+
 .upsetjs.html-widget.html-widget-static-bound {
   @include fill-container;
 }
@@ -80,13 +101,13 @@
 }
 */
 
-/* Add shadows to plotly plots 
+/* Add shadows to plotly plots
 .plot-container.plotly {
     @include shadow;
 }
 */
 
-/*  Center dropdown text 
+/*  Center dropdown text
 .form-group.shiny-input-container {
   text-align: center;
 }

@@ -4,7 +4,8 @@ box::use(
   shiny[...],
   bslib[...],
   shinyWidgets[...],
-  glue[glue]
+  glue[glue],
+  fst[read.fst]
 )
 
 # Modules
@@ -39,10 +40,10 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
+
     list(
       dpc_selected_reactome = reactive(input$select_dpcs_vis_single_reactome)
     )
-    
+
   })
 }

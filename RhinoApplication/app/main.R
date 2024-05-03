@@ -3,7 +3,8 @@
 box::use(
   shiny[...],
   bslib[...],
-  shinyWidgets[...]
+  shinyWidgets[...],
+  fst[read.fst]
 )
 
 # Modules
@@ -24,7 +25,7 @@ ui <- function(id) {
     bg = "#0062cc",
     # Gene List Browser tab
     nav_panel(
-      title = "Gene List Browser", 
+      title = "Gene List Browser",
       page_sidebar(
         # Sidebar
         sidebar = sidebar(
@@ -38,7 +39,7 @@ ui <- function(id) {
     ),
     # Visualisations tab
     nav_panel(
-      title = "Visualisations", 
+      title = "Visualisations",
       visuals_layout$ui(ns("visuals_layout"))
       ),
     # Metadata Information tab
@@ -59,12 +60,12 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
+
     # Gene List Browser tab
     table_data <- import_rda_data$meta_data_table_data()
     sidebar_data <- table_sidebar$server("table_sidebar")
     meta_data_table$server("meta_data_table", table_data, sidebar_data)
-    
+
     # Visualisations tab
     visuals_layout$server("visuals_layout")
   })

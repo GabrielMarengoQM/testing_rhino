@@ -6,7 +6,8 @@ box::use(
   shiny[...],
   bslib[...],
   shinyWidgets[...],
-  glue[glue]
+  glue[glue],
+  fst[read.fst]
 )
 
 # Modules
@@ -57,12 +58,12 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
+
     list(
       selected_dpc = reactive(input$select_dpcs_vis),
       gene_search_input = reactive(input$search_gene),
       show_all_data_points = reactive(input$toggle_all_data_points)
     )
-    
+
   })
 }

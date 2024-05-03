@@ -6,7 +6,8 @@ box::use(
   stats[...],
   upsetjs[...],
   rrvgo[...],
-  ggplot2[...]
+  ggplot2[...],
+  fst[read.fst]
 )
 
 # Rda data
@@ -554,7 +555,7 @@ getViolinPlotData <- function(data, column, gene_lists) {
 }
 
 #' @export
-renderViolinPlot <- function(data, column, genes_to_highlight, threshold_value, toggle_option) {
+renderViolinPlot <- function(data, column, genes_to_highlight, threshold_value, toggle_option, custom_y_axis_title) {
   # print(option)
   if (toggle_option == TRUE) {
     points_setting <- "all"
@@ -597,6 +598,7 @@ renderViolinPlot <- function(data, column, genes_to_highlight, threshold_value, 
   violin_plot <- violin_plot %>%
     layout(
     xaxis = list(title = ""),
+    yaxis = list(title = custom_y_axis_title),
     showlegend = FALSE
     )
 
@@ -681,7 +683,7 @@ getEnrichedGoTermsMultipleInput <- function(gene_lists, background) {
 
   list_of_enrichGO_objs <- list()
   for (i in gene_lists) {
-    go_analysis <- enrichGO(gene          = i[[1]],
+    go_analysis <- clusterProfiler::enrichGO(gene          = i[[1]],
                             universe      = background,
                             keyType = "SYMBOL",
                             OrgDb         = "org.Hs.eg.db",
@@ -703,7 +705,7 @@ getEnrichedGoTermsMultipleInput <- function(gene_lists, background) {
 #' @export
 getEnrichedGoTerms <- function(gene_list, background) {
 
-  go_analysis <- enrichGO(gene          = gene_list[[1]],
+  go_analysis <- clusterProfiler::enrichGO(gene          = gene_list[[1]],
                           universe      = background,
                           keyType = "SYMBOL",
                           OrgDb         = "org.Hs.eg.db",
@@ -716,13 +718,13 @@ getEnrichedGoTerms <- function(gene_list, background) {
 
 #' @export
 generateGoSemanticSimilarityPlot <- function(go_analysis) {
-  simMatrix <- calculateSimMatrix(go_analysis$ID,
+  simMatrix <- rrvgo::calculateSimMatrix(go_analysis$ID,
                                   orgdb="org.Hs.eg.db",
                                   ont="BP",
                                   method="Rel")
 
   scores <- setNames(-log10(go_analysis$qvalue), go_analysis$ID)
-  reducedTerms <- reduceSimMatrix(simMatrix,
+  reducedTerms <- rrvgo::reduceSimMatrix(simMatrix,
                                   scores,
                                   threshold=0.7,
                                   orgdb="org.Hs.eg.db")
@@ -755,15 +757,14 @@ renderGoTable <- function(tables_list, ontology, selected_dpc) {
 #' @export
 renderReactomeEnrichmentPlot <- function(plots_list, selected_dpc) {
 
-  p <- plots_list[[selected_dpc]]
+  p <- plots_list[["plots"]][[selected_dpc]]
 
   return(p)
 }
 
 #' @export
 renderReactomeTable <- function(table_list, selected_dpc) {
-
-  table <- table_list[[selected_dpc]]
+  table <- table_list[["tables"]][[selected_dpc]]
 
   return(table)
 }

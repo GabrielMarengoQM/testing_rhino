@@ -4,14 +4,15 @@ box::use(
   shiny[...],
   bslib[...],
   shinyWidgets[...],
-  htmltools[...]
+  htmltools[...],
+  fst[read.fst]
 )
 
 #' @export
 ui <- function(id) {
   ns <- NS(id)
   layout_column_wrap(
-    width = 1/2, 
+    width = 1/2,
     card(
       full_screen = TRUE,
       card_header(
@@ -23,25 +24,25 @@ ui <- function(id) {
       ),
       card_footer(
         htmltools::span("IMPC ",
-                        htmltools::a(href = "https://www.mousephenotype.org/", 
+                        htmltools::a(href = "https://www.mousephenotype.org/",
                                      "website")
         ),
         tags$br(),
-        htmltools::a(href = "http://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/release-20.0/results/viability.csv.gz", 
+        htmltools::a(href = "http://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/release-20.0/results/viability.csv.gz",
                      "IMPC viability/lethality data"),
-        htmltools::a(href = "http://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/release-20.0/results/genotype-phenotype-assertions-ALL.csv.gz", 
+        htmltools::a(href = "http://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/release-20.0/results/genotype-phenotype-assertions-ALL.csv.gz",
                      "IMPC phenotypes data"),
         tags$br(),
         htmltools::span("MGI ",
-                        htmltools::a(href = "https://www.informatics.jax.org/", 
+                        htmltools::a(href = "https://www.informatics.jax.org/",
                                      "website")
         ),
         tags$br(),
-        htmltools::a(href = " https://www.informatics.jax.org/downloads/reports/MRK_List2.rpt", 
+        htmltools::a(href = " https://www.informatics.jax.org/downloads/reports/MRK_List2.rpt",
                      "MGI viability data")
       )
     ),
-    
+
     card(
       full_screen = TRUE,
       card_header(
@@ -63,7 +64,7 @@ htmltools::p("These values were manually curated from OMIM. They represent OMIM 
       ),
 card_footer(
   htmltools::span("OMIM ",
-                  htmltools::a(href = "https://www.omim.org/", 
+                  htmltools::a(href = "https://www.omim.org/",
                                "website")
   ),
   tags$br(),
@@ -76,7 +77,7 @@ card_footer(
   ),
   tags$br(),
   htmltools::span("Gene2Phenotype ",
-                  htmltools::a(href = "https://www.ebi.ac.uk/gene2phenotype", 
+                  htmltools::a(href = "https://www.ebi.ac.uk/gene2phenotype",
                                "website")
   ),
   tags$br(),
@@ -103,7 +104,7 @@ card(
   ),
   card_footer(
     htmltools::span("DepMap ",
-                    htmltools::a(href = "https://depmap.org/portal/", 
+                    htmltools::a(href = "https://depmap.org/portal/",
                                  "website")
     ),
     tags$br(),
@@ -143,7 +144,7 @@ card(
   ),
   card_footer(
     htmltools::span("gnomAD ",
-                    htmltools::a(href = "https://gnomad.broadinstitute.org/", 
+                    htmltools::a(href = "https://gnomad.broadinstitute.org/",
                                  "website")
     ),
     htmltools::a(href = "https://gnomad.broadinstitute.org/downloads#v4-constraint", "gnomAD v4 constraint downloads"),
@@ -170,7 +171,7 @@ card(
   ),
   card_footer(
     htmltools::span("Pantherdb ",
-                    htmltools::a(href = "https://www.pantherdb.org/downloads/index.jsp", 
+                    htmltools::a(href = "https://www.pantherdb.org/downloads/index.jsp",
                                  "website")
     )
   )
@@ -186,7 +187,7 @@ card(
   ),
   card_footer(
     htmltools::span("Gene Ontology ",
-                    htmltools::a(href = "https://reactome.org/", 
+                    htmltools::a(href = "https://reactome.org/",
                                  "website")
     )
   )
@@ -202,7 +203,7 @@ card(
   ),
   card_footer(
     htmltools::span("Reactome ",
-                    htmltools::a(href = "https://reactome.org/", 
+                    htmltools::a(href = "https://reactome.org/",
                                  "website")
     )
   )
